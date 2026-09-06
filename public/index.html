@@ -1199,17 +1199,29 @@ document.getElementById('btn-run').onclick = async () => {
 
     let data;
     try {
-      const response = await fetch('/api/deconstruct', {
+      let response = await fetch('/api/deconstruct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      });
+      }).catch(() => null);
 
-      if (response.ok) {
+      if (!response || !response.ok) {
+        // Fallback to live active Express tunnel backend
+        response = await fetch('https://charitas-clew-api.loca.lt/api/deconstruct', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Bypass-Tunnel-Reminder': 'true'
+          },
+          body: JSON.stringify(payload)
+        }).catch(() => null);
+      }
+
+      if (response && response.ok) {
         data = await response.json();
       } else {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.error || `Server responded with status ${response.status}`);
+        const errJson = response ? await response.json().catch(() => ({})) : {};
+        throw new Error(errJson.error || "Primary backend server unreachable.");
       }
     } catch (fetchErr) {
       console.warn("Backend API unreachable, attempting client-side Gemini engine fallback...", fetchErr);
