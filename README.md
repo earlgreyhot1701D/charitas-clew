@@ -1,7 +1,7 @@
 # 🌊 Charitas Clew | Public Rights & Paperwork Sanctuary
 
 > **DEV Weekend Challenge Entry (Generosity & Public Good)**  
-> **Built 100% with Google Tech Stack:** Google Gemini 1.5 Flash • Google Cloud Run • Firebase Hosting  
+> **Built 100% with Google Tech Stack:** Google Gemini Flash • Google Cloud Run • Firebase Hosting  
 > **Live App:** [https://charitas-clew.web.app](https://charitas-clew.web.app)
 
 > [!IMPORTANT]
@@ -61,7 +61,7 @@ Whether a user pastes text or uploads a camera photo/PDF scan of any official le
 Charitas Clew was conceived, architected, built, and deployed using a 100% Google Stack:
 
 ```
-[ Gemini Chat Ideation ] ──(Planning & Prompts)──> [ Antigravity IDE / Gemini 1.5 Flash ]
+[ Gemini Chat Ideation ] ──(Planning & Prompts)──> [ Antigravity IDE / Gemini Flash ]
                                                                    │
 [ User Smartphone / Web App ] ──(HTTPS)──> [ Firebase Hosting CDN ]
                                                    │
@@ -69,11 +69,11 @@ Charitas Clew was conceived, architected, built, and deployed using a 100% Googl
                                                    │
                                            [ Google Cloud Run ]
                                                    │
-                                    [ Google Gemini 1.5 Flash API ]
+                                     [ Google Gemini Flash API (`gemini-flash-latest`) ]
 ```
 
 * **Google Gemini Chat Ideation**: Project ideation, problem formulation, persona design, legal advisement wording, and multimodal prompt engineering ([View Public Chat Session](https://gemini.google.com/app/b6b9f7e87d389357)).
-* **Google Gemini 1.5 Flash (`@google/genai` SDK)**: Powers multimodal document OCR, structured JSON extraction, and sanctuary-toned translation.
+* **Google Gemini Flash (`@google/genai` SDK & `gemini-flash-latest`)**: Powers multimodal document OCR, structured JSON extraction, and sanctuary-toned translation.
 * **Google Cloud Run**: Containerized Node.js Express backend (`Dockerfile`) deployed on port 8080.
 * **Google Firebase Hosting**: Ultra-fast static frontend delivery and global CDN (`charitas-clew.web.app`).
 
@@ -83,6 +83,7 @@ Charitas Clew was conceived, architected, built, and deployed using a 100% Googl
 
 - **Prompt Injection Guard**: Regex filters strip control characters and block prompt-hijacking attempts (`ignore instructions`, `jailbreak`, etc.).
 - **XML System Isolation**: User text is wrapped in strict `<document_content>` blocks with system prompts enforcing untrusted data boundaries.
+- **Model Deprecation Resilience**: Built-in dynamic fallback to `gemini-flash-latest` via Google's `ModelService.ListModels` verification, ensuring continuous uptime when legacy model strings are deprecated.
 - **Payload & Rate Limiting**: Express body parser capped at 10MB; API protected by rate limiting (15 req / 15 min per IP).
 - **Graceful EOL Sunset**: Built-in offline fallback displaying 211 and legal aid resources if backend connectivity is unavailable.
 

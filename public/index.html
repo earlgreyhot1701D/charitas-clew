@@ -1336,7 +1336,7 @@ ${payload.text || '[Attached Document Photo/Scan]'}
     contentsParts.push({ inlineData: { mimeType: payload.mimeType || 'image/jpeg', data: base64Data } });
   }
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`;
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
