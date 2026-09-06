@@ -1,0 +1,1146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Charitas Clew | Zero-Judgment Public Rights Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root { 
+  --bg: #F1F5F9; 
+  --surface: #FFFFFF; 
+  --surface-alt: #E2E8F0;
+  --ink: #0F172A; 
+  --brand-primary: #1D4ED8; 
+  --brand-gradient: linear-gradient(135deg, #1D4ED8 0%, #6D28D9 100%);
+  --brand-alert: #6D28D9; 
+  --brand-safe: #0F766E; 
+  --brand-warning: #B45309;
+  --border-thick: 2.5px solid var(--ink); 
+  --shadow-block: 5px 5px 0px var(--ink); 
+  --shadow-hover: 7px 7px 0px var(--ink);
+  --shadow-active: 2px 2px 0px var(--ink);
+}
+
+[data-theme="dark"] {
+  --bg: #0B132B;
+  --surface: #1C2541;
+  --surface-alt: #2A365D;
+  --ink: #F8FAFC;
+  --brand-primary: #3B82F6;
+  --brand-gradient: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+  --brand-alert: #8B5CF6;
+  --brand-safe: #14B8A6;
+  --brand-warning: #F59E0B;
+  --border-thick: 2.5px solid #F8FAFC;
+  --shadow-block: 5px 5px 0px #F8FAFC;
+  --shadow-hover: 7px 7px 0px #F8FAFC;
+  --shadow-active: 2px 2px 0px #F8FAFC;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+  background: var(--bg);
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(29, 78, 216, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(109, 40, 217, 0.06) 0%, transparent 40%);
+  background-attachment: fixed;
+  color: var(--ink); 
+  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif; 
+  padding: 28px 16px 64px 16px;
+  line-height: 1.5;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.engine-core { 
+  max-width: 720px; 
+  margin: 0 auto; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 28px; 
+}
+
+header { 
+  border-bottom: var(--border-thick); 
+  padding-bottom: 24px; 
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.logo-group h1 { 
+  font-size: 2.9rem; 
+  font-weight: 900; 
+  line-height: 0.9; 
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase; 
+  letter-spacing: -0.03em;
+}
+
+.logo-badge {
+  display: inline-block;
+  background: var(--brand-safe);
+  color: #FFFFFF;
+  font-size: 0.76rem;
+  font-weight: 900;
+  padding: 4px 12px;
+  text-transform: uppercase;
+  margin-top: 10px;
+  letter-spacing: 0.06em;
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0px var(--ink);
+}
+
+.explainer-card {
+  background: var(--surface);
+  border: var(--border-thick);
+  border-top: 6px solid var(--brand-primary);
+  box-shadow: var(--shadow-block);
+  padding: 20px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.explainer-header {
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: var(--brand-primary);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.explainer-desc {
+  margin-bottom: 12px;
+  font-weight: 500;
+  opacity: 0.95;
+}
+
+.explainer-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.explainer-steps span {
+  background: var(--surface-alt);
+  border: 1.5px solid var(--ink);
+  padding: 6px 12px;
+  box-shadow: 2px 2px 0px var(--ink);
+}
+
+.creator-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.creator-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-alt);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  padding: 10px 16px;
+  font-weight: 900;
+  font-size: 0.88rem;
+  text-decoration: none;
+  box-shadow: 3px 3px 0px var(--ink);
+  transition: all 0.15s ease;
+}
+
+.creator-link-btn:hover {
+  background: var(--brand-primary);
+  color: #FFFFFF;
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px var(--ink);
+}
+
+.theme-toggle-btn {
+  background: var(--surface);
+  color: var(--ink);
+  border: var(--border-thick);
+  box-shadow: var(--shadow-block);
+  padding: 10px 16px;
+  font-family: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.theme-toggle-btn:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translate(-1px, -1px);
+}
+
+.theme-toggle-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-active);
+}
+
+.card { 
+  background: var(--surface); 
+  border: var(--border-thick); 
+  padding: 26px; 
+  box-shadow: var(--shadow-block); 
+  position: relative;
+  transition: box-shadow 0.2s ease;
+}
+
+.preset-header {
+  font-size: 0.88rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  color: var(--ink);
+}
+
+.presets-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.preset-chip {
+  background: var(--surface-alt);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 3px 3px 0px var(--ink);
+  transition: all 0.15s ease;
+}
+
+.preset-chip:hover {
+  background: var(--brand-primary);
+  color: #FFFFFF;
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px var(--ink);
+}
+
+.preset-chip:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px var(--ink);
+}
+
+.input-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.lang-select-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.lang-select {
+  background: var(--surface-alt);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  padding: 6px 12px;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 0.88rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--ink);
+}
+
+textarea { 
+  width: 100%; 
+  min-height: 130px; 
+  padding: 14px; 
+  margin: 8px 0 16px 0; 
+  border: 2px solid var(--ink); 
+  background: var(--bg); 
+  color: var(--ink); 
+  font-family: inherit; 
+  font-size: 0.95rem; 
+  line-height: 1.5;
+  resize: vertical; 
+}
+
+textarea:focus { 
+  outline: 3px solid var(--brand-primary); 
+  outline-offset: 2px;
+}
+
+textarea:disabled { 
+  opacity: 0.7; 
+  cursor: not-allowed; 
+}
+
+.btn-row {
+  display: flex;
+  gap: 12px;
+}
+
+.btn { 
+  background: var(--brand-gradient); 
+  color: #FFFFFF; 
+  border: var(--border-thick); 
+  padding: 16px 24px; 
+  font-family: inherit;
+  font-weight: 900; 
+  text-transform: uppercase; 
+  cursor: pointer; 
+  width: 100%; 
+  box-shadow: var(--shadow-block); 
+  display: inline-flex; 
+  justify-content: center; 
+  align-items: center; 
+  gap: 12px; 
+  font-size: 1.1rem; 
+  letter-spacing: 0.05em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+  box-shadow: var(--shadow-hover);
+  transform: translate(-2px, -2px);
+}
+
+.btn:active:not(:disabled) { 
+  transform: translate(2px, 2px); 
+  box-shadow: var(--shadow-active); 
+}
+
+.btn:disabled { 
+  opacity: 0.6; 
+  cursor: not-allowed; 
+}
+
+.btn-secondary {
+  background: var(--surface-alt);
+  color: var(--ink);
+}
+
+.error-banner { 
+  display: none; 
+  background: #FEF2F2; 
+  color: #991B1B; 
+  border: var(--border-thick); 
+  padding: 14px 18px; 
+  font-weight: 700; 
+  font-size: 0.95rem; 
+}
+
+.error-banner.active { 
+  display: block; 
+}
+
+.eol-banner { 
+  display: none; 
+  background: var(--brand-alert); 
+  color: #FFFFFF; 
+  padding: 18px; 
+  border: var(--border-thick); 
+  font-weight: 700; 
+  line-height: 1.5;
+}
+
+.eol-banner.active { 
+  display: block; 
+}
+
+.reveal-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 18px; 
+}
+
+@media (max-width: 540px) {
+  .reveal-grid { grid-template-columns: 1fr; }
+}
+
+.stat-box { 
+  border: var(--border-thick); 
+  padding: 22px; 
+  background: var(--surface); 
+  box-shadow: var(--shadow-block);
+}
+
+.stat-box.alert-has-deadline { 
+  background: var(--brand-alert); 
+  color: #FFFFFF; 
+}
+
+.stat-box.alert-no-deadline {
+  background: var(--brand-safe);
+  color: #FFFFFF;
+}
+
+.ticket { 
+  background: var(--surface); 
+  border: var(--border-thick); 
+  border-left: 14px solid var(--brand-safe); 
+  padding: 26px; 
+  box-shadow: var(--shadow-block);
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.ticket-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-btn-sm {
+  background: var(--surface-alt);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  padding: 8px 14px;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 0.86rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 2px 2px 0px var(--ink);
+  transition: all 0.15s ease;
+}
+
+.action-btn-sm:hover {
+  background: var(--brand-primary);
+  color: #FFFFFF;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px var(--ink);
+}
+
+.step-list { 
+  margin-top: 18px; 
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.step-item { 
+  border: 2px solid var(--ink);
+  background: var(--surface-alt);
+  padding: 16px;
+  border-left: 8px solid var(--brand-primary); 
+  box-shadow: 3px 3px 0px var(--ink);
+}
+
+.step-item strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.advocate-paper {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; 
+  background: var(--bg); 
+  color: var(--ink);
+  padding: 16px; 
+  margin: 12px 0 16px 0; 
+  border: 2px dashed var(--ink); 
+  line-height: 1.6; 
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+}
+
+.resource-footer {
+  border-top: var(--border-thick);
+  padding-top: 20px;
+  font-size: 0.88rem;
+}
+
+.resource-links {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.resource-links a {
+  color: var(--brand-primary);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* File Upload Dropzone & Preview Styles */
+.dropzone {
+  border: 2px dashed var(--ink);
+  background: var(--surface-alt);
+  padding: 16px;
+  text-align: center;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--brand-primary);
+  background: var(--bg);
+}
+.dropzone-text {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.dropzone-subtext {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+.file-preview {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg);
+  border: 1.5px solid var(--ink);
+  padding: 10px 14px;
+  margin: 8px 0;
+}
+.file-preview.active { display: flex; }
+.file-thumb { width: 48px; height: 48px; object-fit: cover; border: 1.5px solid var(--ink); }
+.file-info { flex: 1; font-size: 0.85rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-remove-file { background: #DC2626; color: #FFFFFF; border: 1.5px solid var(--ink); padding: 6px 10px; font-weight: 700; font-size: 0.78rem; cursor: pointer; }
+.text-meta-row { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; opacity: 0.85; margin-bottom: 12px; }
+.security-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--brand-safe); font-weight: 700; }
+
+.disclaimer-box {
+  background: var(--surface-alt);
+  border: 1.5px solid var(--ink);
+  border-left: 6px solid var(--brand-warning);
+  padding: 12px 14px;
+  margin-top: 14px;
+  font-size: 0.85rem;
+}
+
+.tel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--brand-safe);
+  color: #FFFFFF !important;
+  border: 1.5px solid var(--ink);
+  padding: 6px 12px;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 0.85rem;
+  box-shadow: 2px 2px 0px var(--ink);
+}
+
+.restore-pill {
+  display: none;
+  background: var(--brand-primary);
+  color: #FFFFFF;
+  border: 1.5px solid var(--ink);
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 12px;
+  box-shadow: 2px 2px 0px var(--ink);
+  font-family: inherit;
+}
+.restore-pill.active { display: inline-block; }
+
+.google-stack-badge {
+  margin-top: 16px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Print Styles */
+.print-only-header { display: none; }
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    padding: 20px !important;
+  }
+  header, .theme-toggle-btn, .preset-header, .presets-grid, .intake, .btn-row, .ticket-actions, .resource-footer, #eol-notice, #error-notice, .dropzone, .text-meta-row, .file-preview, .about-card {
+    display: none !important;
+  }
+  .print-only-header {
+    display: block !important;
+    border-bottom: 2px solid #000;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+  .print-only-header h1 {
+    font-size: 1.8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #000;
+  }
+  .engine-core {
+    max-width: 100% !important;
+    gap: 16px !important;
+  }
+  .card, .stat-box, .ticket {
+    box-shadow: none !important;
+    border: 1.5px solid #000 !important;
+    color: #000 !important;
+    background: #FFF !important;
+    padding: 16px !important;
+  }
+  .advocate-paper {
+    border: 1.5px dashed #000 !important;
+    background: #FFF !important;
+    color: #000 !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="engine-core">
+  <div class="print-only-header">
+    <h1>Charitas Clew</h1>
+    <p><strong>Personal Notice Reference & Speaking Script Sheet</strong></p>
+  </div>
+
+  <header>
+    <div class="header-top-row">
+      <div class="logo-group">
+        <h1>Charitas<br>Clew</h1>
+        <span class="logo-badge">Public Rights & Paperwork Sanctuary</span>
+      </div>
+      <button class="theme-toggle-btn" id="btn-theme" title="Toggle Theme">🌙 Dark</button>
+    </div>
+
+    <div class="explainer-card">
+      <div class="explainer-header">💡 What is Charitas Clew & How to Use It</div>
+      <p class="explainer-desc">
+        Charitas Clew is a zero-judgment paperwork sanctuary that transforms dense legal notices, agency letters, utility disconnections, medical bills, and official paperwork into plain language and clear, actionable steps.
+      </p>
+      <div class="explainer-steps">
+        <span>1️⃣ <strong>Input Any Document:</strong> Paste text or upload a photo/PDF scan of ANY official letter or notice.</span>
+        <span>2️⃣ <strong>Simplify:</strong> Click <em>"Simplify Notice"</em> to translate legalese into calm, plain language.</span>
+        <span>3️⃣ <strong>Take Action:</strong> Review your key dates, simple next steps, and hand-off speaking script.</span>
+      </div>
+      <p style="font-size: 0.82rem; opacity: 0.9; margin-top: 10px; font-weight: 700; border-top: 1px dashed var(--ink); padding-top: 8px;">
+        📄 <strong>Universal Document Support:</strong> Works with eviction warnings, utility disconnects, SNAP/Medicaid renewals, court summonses, hospital/medical bills, tax agency letters, HOA notices, wage garnishments, and all bureaucratic paperwork.
+      </p>
+    </div>
+  </header>
+
+  <div id="eol-notice" class="eol-banner" role="alert">
+    ⚠️ SERVICE OFFLINE: This automated tool is currently sunsetted. For immediate housing, legal, or utility assistance, please dial <strong>211</strong> or visit your local Legal Aid Society.
+  </div>
+
+  <div id="error-notice" class="error-banner" role="alert"></div>
+
+  <section class="card intake">
+    <button class="restore-pill" id="btn-restore">✨ Restore Last Simplified Notice</button>
+
+    <div class="preset-header">Try a Sample Notice (Works with ANY Official Document):</div>
+    <div class="presets-grid">
+      <button class="preset-chip" data-preset="eviction">🏠 Rent / Eviction Warning</button>
+      <button class="preset-chip" data-preset="utility">⚡ Utility Service Disconnect</button>
+      <button class="preset-chip" data-preset="benefits">📋 SNAP / Benefit Renewal</button>
+      <button class="preset-chip" data-preset="summons">⚖️ Court Summons</button>
+      <button class="preset-chip" data-preset="medical">🏥 Hospital / Medical Bill</button>
+    </div>
+
+    <div class="input-header-row">
+      <h2 style="font-weight: 900; font-size: 1.2rem;">Understand Your Notice</h2>
+      <div class="lang-select-group">
+        <label for="lang-select">Language:</label>
+        <select id="lang-select" class="lang-select">
+          <option value="English">English</option>
+          <option value="Español (Spanish)">Español</option>
+          <option value="Tiếng Việt (Vietnamese)">Tiếng Việt</option>
+          <option value="中文 (Chinese)">中文</option>
+          <option value="العربية (Arabic)">العربية</option>
+          <option value="Français (French)">Français</option>
+        </select>
+      </div>
+    </div>
+
+    <textarea id="notice-input" placeholder="Paste official notice text here..." aria-label="Notice text input" maxlength="5000"></textarea>
+    
+    <div class="text-meta-row">
+      <span id="char-count">0 / 5,000 max characters</span>
+      <span class="security-badge">🔒 Encrypted & Rate-Protected</span>
+    </div>
+
+    <!-- Multimodal Upload Area -->
+    <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" style="display: none;">
+    <div class="dropzone" id="dropzone" role="button" tabindex="0" title="Click or drop a photo of your notice">
+      <span style="font-size: 1.4rem;">📷</span>
+      <span class="dropzone-text">Upload Photo or Scan of Document</span>
+      <span class="dropzone-subtext">Click to choose image or drag & drop (JPG, PNG, WEBP, PDF up to 5MB)</span>
+    </div>
+
+    <div class="file-preview" id="file-preview">
+      <img id="file-thumb" class="file-thumb" src="" alt="Notice thumbnail">
+      <div class="file-info" id="file-info">Selected File</div>
+      <button type="button" class="btn-remove-file" id="btn-remove-file">❌ Remove Photo</button>
+    </div>
+    
+    <div class="btn-row" style="margin-top: 12px;">
+      <button class="btn" id="btn-run">Simplify Notice ↳</button>
+      <button class="btn btn-secondary" id="btn-clear" style="width: 30%;">Clear</button>
+    </div>
+  </section>
+
+  <div class="reveal-grid" aria-live="polite" id="reveal-section">
+    <div class="stat-box">
+      <strong style="color: var(--brand-primary); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">Clear & Simple Summary</strong>
+      <p id="meaning-text" style="margin-top: 8px; font-weight: 500;">Paste or select a sample notice above to begin...</p>
+    </div>
+    <div class="stat-box" id="deadline-box">
+      <strong style="text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">Key Dates & Timeline</strong>
+      <h3 id="deadline-val" style="font-size:1.8rem; margin:6px 0; letter-spacing: 0.02em; font-weight: 900;">--</h3>
+      <p id="deadline-context" style="font-size:0.85rem;">Paste or select a sample notice above to begin...</p>
+    </div>
+  </div>
+
+  <section class="card" aria-live="polite">
+    <strong style="color: var(--brand-primary); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">Simple Next Steps</strong>
+    <div class="step-list" id="action-steps-container">
+      <div style="color: var(--ink); opacity: 0.7;">Paste or select a sample notice above to begin...</div>
+    </div>
+  </section>
+
+  <section class="ticket" aria-live="polite">
+    <div class="ticket-header">
+      <strong style="color: var(--brand-safe); text-transform: uppercase; font-size: 0.9rem; letter-spacing: 0.05em;">Personal Speaking Script & Phone Guide</strong>
+      <div class="ticket-actions">
+        <button class="action-btn-sm" id="btn-speech">🔊 Listen</button>
+        <button class="action-btn-sm" id="btn-copy">📋 Copy</button>
+        <button class="action-btn-sm" id="btn-share">📲 Share / Print</button>
+      </div>
+    </div>
+    <p id="script-text" class="advocate-paper">Paste or select a sample notice above to begin...</p>
+    <span style="font-size: 0.8rem; opacity: 0.85;">💡 <strong>Tip:</strong> Read this script out loud when calling or speaking to a clerk, caseworker, or counselor.</span>
+    
+    <div class="disclaimer-box" role="note">
+      <strong style="color: var(--brand-warning); font-size: 0.85rem;">⚖️ Legal Advisement & Self-Advocacy Notice:</strong>
+      <p style="font-size: 0.82rem; margin-top: 4px; line-height: 1.4; opacity: 0.9;">
+        Charitas Clew provides automated educational information and self-advocacy guidance only. It is not formal legal advice or legal representation. Please review all script text and verify document details with a qualified legal aid advocate or caseworker before taking formal action.
+      </p>
+    </div>
+  </section>
+
+  <section class="card about-card">
+    <strong style="color: var(--brand-primary); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">About & Project Links</strong>
+    <p style="font-size: 0.9rem; margin: 8px 0 12px 0;">
+      Created by <strong>La-Shara Cordero</strong> to provide everyone with a dignified, accessible paperwork sanctuary. Explore project ideation, research, articles, and professional links below:
+    </p>
+    <div class="creator-links">
+      <a href="https://gemini.google.com/app/b6b9f7e87d389357" target="_blank" rel="noopener" class="creator-link-btn" style="background: var(--brand-primary); color: #FFFFFF;">
+        🤖 Gemini Chat Ideation
+      </a>
+      <a href="https://dev.to/earlgreyhot1701d" target="_blank" rel="noopener" class="creator-link-btn">
+        📝 DEV Community Profile
+      </a>
+      <a href="https://earlgreyhot1701d.github.io/Clew-Labs/" target="_blank" rel="noopener" class="creator-link-btn">
+        🔬 Clew Labs Project
+      </a>
+      <a href="https://www.linkedin.com/in/la-shara-cordero-a0017a11/" target="_blank" rel="noopener" class="creator-link-btn">
+        💼 LinkedIn Profile
+      </a>
+    </div>
+  </section>
+
+  <footer class="resource-footer">
+    <strong>Free Emergency Legal & Community Assistance Resources:</strong>
+    <div class="resource-links" style="margin-top: 10px;">
+      <a href="tel:211" class="tel-btn">📞 Call 211 (1-Tap Emergency Dial)</a>
+      <a href="https://www.lsc.gov/about-lsc/what-legal-aid/get-legal-help" target="_blank" rel="noopener">Find Local Legal Aid</a>
+      <a href="https://www.hud.gov/topics/housing_counseling" target="_blank" rel="noopener">HUD Housing Counseling</a>
+    </div>
+
+    <div class="google-stack-badge">
+      ⚡ 100% Google Stack: Gemini Chat Ideation • Gemini 3.6 Flash Multimodal • Express on Cloud Run • Firebase Hosting
+    </div>
+  </footer>
+</div>
+
+<script>
+// Sample Presets Data
+const PRESETS = {
+  eviction: `NOTICE TO QUIT - PAY RENT OR VACATE WITHIN 3 DAYS
+TO TENANT: JOHN DOE AND ALL OCCUPANTS IN POSSESSION.
+PLEASE TAKE NOTICE that you are hereby required to pay to the undersigned the sum of $1,450.00 being the past-due rent for occupancy of the premises located at 452 Elm Street, Apt 3B. YOU ARE REQUIRED to pay said amount in full or quit and deliver up possession of the premises within THREE (3) DAYS after service of this notice, or legal proceedings will be instituted against you to recover possession and damages.`,
+  utility: `FINAL DISCONNECT NOTICE - ELECTRIC UTILITY SERVICE
+ACCOUNT NO: 8849-201-94
+TOTAL PAST DUE AMOUNT: $312.40
+DISCONNECTION DATE: SEPTEMBER 18, 2026
+IMPORTANT: Your electric service is scheduled for disconnection on or after the date listed above due to unpaid balances. To avoid service disruption and a reconnect fee of $75.00, full payment or a formal payment plan agreement must be submitted prior to the disconnection date. If you have medical conditions requiring electricity, contact our advocate center immediately.`,
+  benefits: `DEPARTMENT OF HUMAN SERVICES - NOTICE OF RECERTIFICATION
+CASE NUMBER: TX-9038112
+BENEFIT PROGRAM: SNAP / MEDICAID
+ACTION REQUIRED: Your annual eligibility certification period expires on September 30, 2026. You must submit your completed Renewal Form along with proof of income and household size no later than 5:00 PM on September 25, 2026. Failure to submit required verification by the deadline will result in immediate termination of food and medical assistance benefits.`,
+  summons: `IN THE MUNICIPAL COURT OF THE FIRST JUDICIAL DISTRICT
+SUMMONS & NOTICE OF HEARING
+CASE NO: CV-2026-004812
+PLAINTIFF: APARTMENT MANAGEMENT LLC vs DEFENDANT: JANE SMITH
+YOU ARE HEREBY SUMMONED and required to appear before the presiding magistrate at Courtroom 4B on October 5, 2026 at 9:00 AM for a hearing regarding possession of real property. You must file a written answer to the complaint with the clerk of court within 10 days of service.`,
+  medical: `VALLEY HEALTH HOSPITAL SYSTEM - FINAL BILLING & ACTION NOTICE
+ACCOUNT NO: MED-994012
+AMOUNT DUE: $1,840.50
+DATE OF SERVICE: AUGUST 12, 2026
+PLEASE TAKE NOTICE that your account is 90 days past due. If payment is not received or financial assistance paperwork (Form 104-A) is not submitted by October 15, 2026, this account will be transferred to a third-party collection agency. Contact financial aid immediately if you qualify for charity care or hardship assistance.`
+};
+
+// Theme toggle
+const themeBtn = document.getElementById('btn-theme');
+let isDark = false;
+themeBtn.onclick = () => {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  themeBtn.innerText = isDark ? '☀️ Light' : '🌙 Dark';
+};
+
+// Character Counter & Input Sanitization
+const noticeInput = document.getElementById('notice-input');
+const charCount = document.getElementById('char-count');
+
+function updateCharCount() {
+  const len = noticeInput.value.length;
+  charCount.innerText = `${len.toLocaleString()} / 5,000 max characters`;
+  if (len > 5000) {
+    charCount.style.color = '#DC2626';
+  } else {
+    charCount.style.color = 'inherit';
+  }
+}
+noticeInput.oninput = updateCharCount;
+
+// Multimodal File Upload Logic
+const fileInput = document.getElementById('file-input');
+const dropzone = document.getElementById('dropzone');
+const filePreview = document.getElementById('file-preview');
+const fileThumb = document.getElementById('file-thumb');
+const fileInfo = document.getElementById('file-info');
+const btnRemoveFile = document.getElementById('btn-remove-file');
+
+let selectedImageData = null;
+let selectedMimeType = null;
+
+dropzone.onclick = () => fileInput.click();
+dropzone.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); };
+
+['dragenter', 'dragover'].forEach(eventName => {
+  dropzone.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzone.classList.add('dragover');
+  }, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+  dropzone.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzone.classList.remove('dragover');
+  }, false);
+});
+
+dropzone.addEventListener('drop', (e) => {
+  const dt = e.dataTransfer;
+  const files = dt.files;
+  if (files && files.length > 0) {
+    handleSelectedFile(files[0]);
+  }
+});
+
+fileInput.onchange = () => {
+  if (fileInput.files && fileInput.files.length > 0) {
+    handleSelectedFile(fileInput.files[0]);
+  }
+};
+
+function handleSelectedFile(file) {
+  if (!file) return;
+  hideError();
+
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
+  if (!allowedTypes.includes(file.type.toLowerCase())) {
+    showError("Please select a valid image file (JPG, PNG, WEBP) or PDF document.");
+    return;
+  }
+
+  if (file.size > 7 * 1024 * 1024) {
+    showError("Selected file exceeds the 7MB size limit.");
+    return;
+  }
+
+  selectedMimeType = file.type.toLowerCase();
+  fileInfo.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    selectedImageData = e.target.result;
+    if (selectedMimeType.startsWith('image/')) {
+      fileThumb.src = selectedImageData;
+      fileThumb.style.display = 'block';
+    } else {
+      fileThumb.style.display = 'none';
+    }
+    filePreview.classList.add('active');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFileSelection() {
+  selectedImageData = null;
+  selectedMimeType = null;
+  fileInput.value = '';
+  filePreview.classList.remove('active');
+  fileThumb.src = '';
+}
+
+btnRemoveFile.onclick = clearFileSelection;
+
+// Clear Button
+document.getElementById('btn-clear').onclick = () => {
+  noticeInput.value = '';
+  updateCharCount();
+  clearFileSelection();
+  hideError();
+};
+
+// Preset Buttons
+document.querySelectorAll('.preset-chip').forEach(chip => {
+  chip.onclick = () => {
+    const key = chip.getAttribute('data-preset');
+    if (PRESETS[key]) {
+      noticeInput.value = PRESETS[key];
+      updateCharCount();
+    }
+  };
+});
+
+// Copy Button
+document.getElementById('btn-copy').onclick = async () => {
+  const scriptText = document.getElementById('script-text').innerText;
+  if (!scriptText || scriptText.includes('Paste or select')) return;
+  try {
+    await navigator.clipboard.writeText(scriptText);
+    const btn = document.getElementById('btn-copy');
+    btn.innerText = "✓ Copied!";
+    setTimeout(() => btn.innerText = "📋 Copy", 1600);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+// Native Share / Print Button
+document.getElementById('btn-share').onclick = async () => {
+  const scriptText = document.getElementById('script-text').innerText;
+  const meaningText = document.getElementById('meaning-text').innerText;
+  if (!scriptText || scriptText.includes('Paste or select')) return;
+
+  const shareData = {
+    title: 'Charitas Clew - Personal Speaking Script',
+    text: `Charitas Clew Summary:\n${meaningText}\n\nSpeaking Script:\n${scriptText}`,
+    url: window.location.href
+  };
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        window.print();
+      }
+    }
+  } else {
+    window.print();
+  }
+};
+
+// Speech Synthesis
+let synthSpeaking = false;
+document.getElementById('btn-speech').onclick = () => {
+  const btn = document.getElementById('btn-speech');
+  if (!('speechSynthesis' in window)) {
+    alert('Text-to-speech is not supported in your browser.');
+    return;
+  }
+  if (synthSpeaking) {
+    window.speechSynthesis.cancel();
+    synthSpeaking = false;
+    btn.innerText = "🔊 Listen";
+    return;
+  }
+  const meaning = document.getElementById('meaning-text').innerText;
+  const script = document.getElementById('script-text').innerText;
+  if (script.includes('Paste or select')) return;
+
+  const textToRead = `Summary: ${meaning}. Recommended note: ${script}`;
+  const utterance = new SpeechSynthesisUtterance(textToRead);
+  utterance.onend = () => {
+    synthSpeaking = false;
+    btn.innerText = "🔊 Listen";
+  };
+  window.speechSynthesis.speak(utterance);
+  synthSpeaking = true;
+  btn.innerText = "⏹️ Stop";
+};
+
+function showError(msg) {
+  const banner = document.getElementById('error-notice');
+  banner.innerText = `⚠️ ${msg}`;
+  banner.classList.add('active');
+}
+
+function hideError() {
+  const banner = document.getElementById('error-notice');
+  banner.classList.remove('active');
+}
+
+// Graceful EOL & Failure Fallback
+function triggerEOL() {
+  document.getElementById('eol-notice').classList.add('active');
+  document.getElementById('btn-run').disabled = true;
+  noticeInput.disabled = true;
+  document.getElementById('btn-run').innerText = 'System Sunsetted';
+}
+
+if (new Date() > new Date('2027-01-01')) { triggerEOL(); }
+
+function renderNoticeResults(data) {
+  if (!data) return;
+  document.getElementById('meaning-text').innerText = data.actualMeaning || 'No summary available.';
+  
+  const deadlineBox = document.getElementById('deadline-box');
+  if (data.hasDeadline) {
+    deadlineBox.className = "stat-box alert-has-deadline";
+    document.getElementById('deadline-val').innerText = data.deadlineDate || 'ACTION NEEDED';
+  } else {
+    deadlineBox.className = "stat-box alert-no-deadline";
+    document.getElementById('deadline-val').innerText = 'NO IMMEDIATE DEADLINE';
+  }
+  
+  document.getElementById('deadline-context').innerText = data.hasDeadline 
+    ? (data.deadlineContext || 'Follow up before date indicated.') 
+    : 'No critical date enforced in notice.';
+    
+  document.getElementById('script-text').innerText = data.advocateScript || 'No speaking script generated.';
+  
+  if (Array.isArray(data.actionSteps) && data.actionSteps.length > 0) {
+    document.getElementById('action-steps-container').innerHTML = data.actionSteps.map((step, idx) => 
+      `<div class="step-item"><strong>Step ${idx + 1}: ${step.title}</strong><span>${step.description}</span></div>`
+    ).join('');
+  }
+}
+
+// Local Storage Restoration Logic
+const btnRestore = document.getElementById('btn-restore');
+function checkSavedNotice() {
+  try {
+    const saved = localStorage.getItem('charitas_last_notice');
+    if (saved) {
+      btnRestore.classList.add('active');
+    }
+  } catch(e){}
+}
+checkSavedNotice();
+
+btnRestore.onclick = () => {
+  try {
+    const saved = localStorage.getItem('charitas_last_notice');
+    if (saved) {
+      const data = JSON.parse(saved);
+      renderNoticeResults(data);
+      btnRestore.classList.remove('active');
+    }
+  } catch(e){}
+};
+
+document.getElementById('btn-run').onclick = async () => {
+  const text = noticeInput.value.trim();
+  const targetLanguage = document.getElementById('lang-select').value;
+  hideError();
+
+  if (!text && !selectedImageData) {
+    showError("Please paste notice text, choose a sample above, or upload a photo of the document.");
+    return;
+  }
+
+  if (text.length > 5000) {
+    showError("Notice text exceeds maximum character limit of 5,000.");
+    return;
+  }
+  
+  const btn = document.getElementById('btn-run');
+  const revealSection = document.getElementById('reveal-section');
+  
+  btn.disabled = true;
+  noticeInput.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Simplifying...';
+  revealSection.setAttribute('aria-busy', 'true');
+  
+  try {
+    const payload = { targetLanguage };
+    if (text) payload.text = text;
+    if (selectedImageData) {
+      payload.image = selectedImageData;
+      payload.mimeType = selectedMimeType;
+    }
+
+    const response = await fetch('/api/deconstruct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const data = await response.json();
+
+    if (!response.ok) {
+      showError(data.error || "Failed to process document.");
+      return;
+    }
+    
+    renderNoticeResults(data);
+
+    try {
+      localStorage.setItem('charitas_last_notice', JSON.stringify(data));
+      btnRestore.classList.remove('active');
+    } catch(e){}
+    
+  } catch (e) {
+    console.error(e);
+    showError("Network connection issue. Please try again.");
+  } finally {
+    btn.disabled = false;
+    noticeInput.disabled = false;
+    btn.innerHTML = 'Simplify Notice ↳';
+    revealSection.setAttribute('aria-busy', 'false');
+  }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+Markdown
+# ANTIGRAVITY MASTER DIRECTIVE: CHARITAS CLEW
+
+## 1. THE STORY & PRD
+**Mission (DEV Weekend Challenge - Generosity):** 
+Charitas Clew is a mobile-first, zero-judgment public rights engine. It ingests intimidating bureaucratic notices, deconstructs the legal threats using Gemini Flash, and outputs protected rights and an actionable caseworker script. 
+
+**Product Requirements:**
+*   **Tone:** Dignified sanctuary. No alarming terms.
+*   **Aesthetics:** "Deep Oceanic Neo-Editorial." Tactile, blocky, mobile-first, using cool, saturated, calming colors (Royal Azure, Vibrant Violet, Deep Teal).
+*   **Safety & EOL:** Must include a Graceful End-of-Life (EOL) fallback. If the backend fails or the project sunsets, the UI must provide static links to real-world legal aid.
+
+## 2. ARCHITECTURE
+*   **Stack:** 100% Google Stack. Node.js backend (Express) + `@google/genai` SDK + Vanilla HTML/CSS/JS frontend. 
+*   **Deployment:** Firebase Hosting (Frontend) + Google Cloud Run (Backend via Docker). 
+
+## 3. THE CODEBASE
+
+Create the following file structure exactly as specified.
+
+### A. `package.json`
+```json
+{
+  "name": "charitas-clew",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/genai": "^0.1.1",
+    "express": "^4.21.0"
+  }
+}
+B. firebase.json
+JSON
+{
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "charitas-clew-api",
+          "region": "us-central1"
+        }
+      }
+    ]
+  }
+}
+C. Dockerfile
+Dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --omit=dev
+COPY . .
+ENV PORT=8080
+EXPOSE 8080
+CMD ["npm", "start"]
+D. server.js
+JavaScript
+import express from 'express';
+import { GoogleGenAI } from '@google/genai';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const app = express();
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+const ai = new GoogleGenAI(); // Requires GEMINI_API_KEY in environment
+
+app.post('/api/deconstruct', async (req, res) => {
+  try {
+    const { text } = req.body;
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: `Deconstruct this bureaucratic notice: ${text}`,
+      config: {
+        systemInstruction: "You are Charitas Clew, an impartial public legal advocate. Deconstruct bureaucratic notices into clear, dignified language. Formulate 2-3 simple next steps. Draft a respectful formal English note the user can hand to a clerk.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            actualMeaning: { type: "STRING" },
+            hasDeadline: { type: "BOOLEAN" },
+            deadlineDate: { type: "STRING" },
+            deadlineContext: { type: "STRING" },
+            actionSteps: {
+              type: "ARRAY",
+              items: {
+                type: "OBJECT",
+                properties: {
+                  title: { type: "STRING" },
+                  description: { type: "STRING" }
+                }
+              }
+            },
+            advocateScript: { type: "STRING" }
+          },
+          required: ["actualMeaning", "hasDeadline", "actionSteps", "advocateScript"]
+        }
+      }
+    });
+
+    res.json(JSON.parse(response.text));
+  } catch (error) {
+    console.error("API Error:", error);
+    res.status(500).json({ error: 'Failed to process document' });
+  }
+});
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`Charitas Clew engine running on port ${PORT}`));
+E. public/index.html
+HTML
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Charitas Clew | Public Rights Engine</title>
+<style>
+:root { 
+  --bg: #F1F5F9; 
+  --surface: #FFFFFF; 
+  --ink: #0F172A; 
+  --brand-primary: #2563EB; 
+  --brand-alert: #7C3AED; 
+  --brand-safe: #0D9488; 
+  --border-thick: 2.5px solid var(--ink); 
+  --shadow-block: 4px 4px 0px var(--ink); 
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--ink); font-family: "Space Grotesk", sans-serif; padding: 20px 16px; }
+.engine-core { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+header { border-bottom: var(--border-thick); padding-bottom: 16px; }
+h1 { font-size: 2.4rem; font-weight: 900; line-height: 0.9; color: var(--brand-primary); text-transform: uppercase; }
+.card { background: var(--surface); border: var(--border-thick); padding: 20px; box-shadow: var(--shadow-block); }
+textarea { width: 100%; min-height: 100px; padding: 12px; margin: 12px 0; border: 1.5px solid var(--ink); background: #F8FAFC; color: var(--ink); font-family: inherit; font-size: 1rem; resize: vertical; }
+textarea:focus { outline: none; border-color: var(--brand-primary); }
+.btn { background: var(--brand-primary); color: #FFF; border: var(--border-thick); padding: 14px; font-weight: 900; text-transform: uppercase; cursor: pointer; width: 100%; box-shadow: var(--shadow-block); display: inline-flex; justify-content: center; align-items: center; gap: 8px; font-size: 1rem; }
+.btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--ink); }
+.eol-banner { display: none; background: var(--brand-alert); color: #FFF; padding: 16px; border: var(--border-thick); font-weight: 700; }
+.eol-banner.active { display: block; }
+.reveal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.stat-box { border: var(--border-thick); padding: 16px; background: var(--surface); }
+.stat-box.alert { background: var(--brand-alert); color: #FFF; }
+.ticket { background: #FFF; border: var(--border-thick); border-left: 12px solid var(--brand-safe); padding: 24px 20px; }
+.step-list { margin-top: 16px; }
+.step { margin-bottom: 12px; border-left: 3px solid var(--brand-primary); padding-left: 12px; }
+</style>
+</head>
+<body>
+<div class="engine-core">
+  <header><h1>Charitas<br>Clew</h1><p style="font-weight: 700; margin-top: 8px;">Public Rights Engine</p></header>
+
+  <div id="eol-notice" class="eol-banner">
+    ⚠️ SERVICE OFFLINE: This automated tool is no longer maintained. For immediate housing, legal, or utility assistance, please dial <strong>211</strong> or contact your local Legal Aid Society.
+  </div>
+
+  <section class="card intake">
+    <h2 style="font-weight: 900;">Read a Notice</h2>
+    <textarea id="notice-input" placeholder="Paste notice text here..."></textarea>
+    <button class="btn" id="btn-run">Decompress Notice ↳</button>
+  </section>
+
+  <div class="reveal-grid" aria-live="polite">
+    <div class="stat-box"><strong style="color: var(--brand-primary);">Actual Meaning</strong><p id="meaning-text" style="margin-top: 8px;">Awaiting input...</p></div>
+    <div class="stat-box alert"><strong>Deadline</strong><h3 id="deadline-val" style="font-size:1.8rem; margin:4px 0; letter-spacing: 0.05em;">--</h3><p id="deadline-context" style="font-size:0.8rem;">Awaiting input...</p></div>
+  </div>
+
+  <section class="card">
+    <strong style="color: var(--brand-primary); text-transform: uppercase;">Action Protocol</strong>
+    <div class="step-list" id="action-steps-container">Awaiting input...</div>
+  </section>
+
+  <section class="ticket">
+    <strong style="color: var(--brand-safe); text-transform: uppercase;">Advocate Script</strong>
+    <p id="script-text" style="font-family: monospace; background: #F8FAFC; padding: 12px; margin: 12px 0; border: 1px solid var(--ink); line-height: 1.5;">Awaiting input...</p>
+    <button class="btn" id="btn-copy" style="background: var(--surface); color: var(--ink);">📋 Copy Text</button>
+  </section>
+</div>
+
+<script>
+document.getElementById('btn-copy').onclick = async () => {
+  await navigator.clipboard.writeText(document.getElementById('script-text').innerText);
+  document.getElementById('btn-copy').innerText = "Copied!";
+  setTimeout(() => document.getElementById('btn-copy').innerText = "📋 Copy Text", 1500);
+};
+
+// Graceful EOL & Failure Fallback
+function triggerEOL() {
+  document.getElementById('eol-notice').classList.add('active');
+  document.getElementById('btn-run').disabled = true;
+  document.getElementById('btn-run').innerText = 'System Offline';
+}
+
+// Sunset check (e.g., Jan 1, 2027)
+if (new Date() > new Date('2027-01-01')) { triggerEOL(); }
+
+document.getElementById('btn-run').onclick = async () => {
+  const text = document.getElementById('notice-input').value;
+  if (!text) return alert("Please enter text.");
+  
+  const btn = document.getElementById('btn-run');
+  btn.textContent = 'Processing...';
+  btn.style.transform = 'translate(2px, 2px)';
+  btn.style.boxShadow = '2px 2px 0px var(--ink)';
+  
+  try {
+    const response = await fetch('/api/deconstruct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    
+    if (!response.ok) throw new Error("API Failure");
+    
+    const data = await response.json();
+    document.getElementById('meaning-text').innerText = data.actualMeaning;
+    document.getElementById('deadline-val').innerText = data.hasDeadline ? data.deadlineDate : 'NONE';
+    document.getElementById('deadline-context').innerText = data.hasDeadline ? data.deadlineContext : 'No immediate action required.';
+    document.getElementById('script-text').innerText = data.advocateScript;
+    
+    document.getElementById('action-steps-container').innerHTML = data.actionSteps.map(step => 
+      `<div class="step"><strong style="color: var(--ink);">\${step.title}</strong><br><span style="font-size: 0.9rem;">\${step.description}</span></div>`
+    ).join('');
+    
+  } catch (e) {
+    console.error(e);
+    triggerEOL(); // Fail gracefully to human resources
+  } finally {
+    btn.textContent = 'Decompress Notice ↳';
+    btn.style.transform = 'none';
+    btn.style.boxShadow = 'var(--shadow-block)';
+  }
+};
+</script>
+</body>
+</html>
+4. EXECUTION PLAN
+Write package.json, firebase.json, Dockerfile, server.js, and public/index.html.
+
+Run npm install.
+
+Boot the application locally with npm start to test the UI and API connections before deploying to Cloud Run.
