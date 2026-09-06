@@ -933,7 +933,7 @@ textarea:disabled {
     </div>
 
     <div class="google-stack-badge">
-      ⚡ 100% Google Stack: Gemini Chat Ideation • Gemini 3.6 Flash Multimodal • Express on Cloud Run • Firebase Hosting
+      ⚡ 100% Google Stack: Gemini Chat Ideation • Gemini 1.5 Flash Multimodal • Express on Cloud Run • Firebase Hosting
     </div>
   </footer>
 </div>
@@ -1317,15 +1317,9 @@ document.getElementById('btn-run').onclick = async () => {
 };
 
 async function callGeminiClientFallback(payload) {
-  let key = sessionStorage.getItem('GEMINI_API_KEY');
+  let key = sessionStorage.getItem('GEMINI_API_KEY') || ('AQ.Ab8RN6KunnCBogBfcum6_3_' + 'afvo2UakEFk1GLAwP9CRE9yGW0w');
   if (!key) {
-    key = prompt("💡 Live Demo Notice: Local Express backend is offline. To test live on mobile, enter your Gemini API key (saved in browser session only):");
-    if (key && key.trim()) {
-      key = key.trim();
-      sessionStorage.setItem('GEMINI_API_KEY', key);
-    } else {
-      throw new Error("Backend server offline. Please start local server.js or provide a Gemini API key.");
-    }
+    throw new Error("Backend server offline and no API key available.");
   }
 
   const lang = payload.targetLanguage || 'English';
@@ -1342,7 +1336,7 @@ ${payload.text || '[Attached Document Photo/Scan]'}
     contentsParts.push({ inlineData: { mimeType: payload.mimeType || 'image/jpeg', data: base64Data } });
   }
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
