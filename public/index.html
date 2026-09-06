@@ -4,6 +4,16 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Charitas Clew | Zero-Judgment Public Rights Engine</title>
+<meta name="description" content="A zero-judgment mobile sanctuary that translates dense legal notices, utility disconnections, SNAP renewals, and official paperwork into plain language and practical guidance." />
+<meta property="og:title" content="Charitas Clew | Zero-Judgment Public Rights Engine" />
+<meta property="og:description" content="Decompressing legal bureaucracy with Google AI. Plain language deconstruction, key dates, and personal speaking scripts." />
+<meta property="og:image" content="https://charitas-clew.web.app/social-card.jpg" />
+<meta property="og:url" content="https://charitas-clew.web.app" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Charitas Clew | Zero-Judgment Public Rights Engine" />
+<meta name="twitter:description" content="Decompressing legal bureaucracy with Google AI." />
+<meta name="twitter:image" content="https://charitas-clew.web.app/social-card.jpg" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -286,13 +296,15 @@ details.explainer-card summary::-webkit-details-marker {
 
 .input-header-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   margin-bottom: 10px;
 }
 
 .lang-select-group {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   font-size: 0.88rem;
@@ -309,6 +321,29 @@ details.explainer-card summary::-webkit-details-marker {
   font-size: 0.88rem;
   cursor: pointer;
   box-shadow: 2px 2px 0px var(--ink);
+  border-radius: 0;
+}
+
+@media (max-width: 520px) {
+  .input-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .lang-select-group {
+    width: 100%;
+    justify-content: space-between;
+    background: var(--surface-alt);
+    padding: 6px 10px;
+    border: 1.5px solid var(--ink);
+    box-shadow: 2px 2px 0px var(--ink);
+  }
+  .lang-select {
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    padding: 4px 8px;
+  }
 }
 
 textarea { 

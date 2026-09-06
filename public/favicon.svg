@@ -1,6 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="14" fill="#0F294A"/>
-  <path d="M46 12 C36 12 26 22 22 36 C20 43 18 50 14 54 C20 52 27 48 32 40 C38 30 46 22 46 12 Z" fill="#2563EB" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M22 36 L40 18" stroke="#0D9488" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="44" cy="14" r="3" fill="#38BDF8"/>
+  <!-- Outer Shield Container (Sanctuary) -->
+  <rect width="64" height="64" rx="16" fill="#0F172A"/>
+  
+  <!-- Protective Sanctuary Shield -->
+  <path d="M32 8 C42 8 50 14 50 24 C50 42 32 56 32 56 C32 56 14 42 14 24 C14 14 22 8 32 8 Z" fill="#1D4ED8" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round"/>
+  
+  <!-- Inner Maze / Labyrinth Lines (Bureaucracy) -->
+  <path d="M22 20 H42 M22 26 H36 M22 32 H42 M22 38 H34" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  
+  <!-- Golden Clew (Guiding Thread Unraveling out of the Labyrinth into Light) -->
+  <path d="M20 40 C28 34 32 26 44 20" stroke="#F59E0B" stroke-width="3.5" stroke-linecap="round"/>
+  
+  <!-- Star of Clarity / Light at the End of Thread -->
+  <path d="M44 20 L46 15 L48 20 L53 22 L48 24 L46 29 L44 24 L39 22 Z" fill="#FBFBFE" stroke="#F59E0B" stroke-width="1"/>
 </svg>
