@@ -50,6 +50,8 @@ The entire project lifecycle, from initial ideation to code generation and Cloud
 * **Backend Infrastructure**: Containerized Node.js and Express gateway deployed on Google Cloud Run.
 * **Global CDN Hosting**: Delivered static assets globally via Firebase Hosting.
 
+![100% Google Stack Architecture](https://charitas-clew.web.app/google-stack-architecture.png)
+
 Building a zero-judgment public rights sanctuary in a single weekend meant solving real human problems with technical rigor. Here is where the seams showed, and how we reinforced them.
 
 ### Software happens in physical waiting rooms.

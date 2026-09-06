@@ -1197,17 +1197,23 @@ document.getElementById('btn-run').onclick = async () => {
       payload.mimeType = selectedMimeType;
     }
 
-    const response = await fetch('/api/deconstruct', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    
-    const data = await response.json();
+    let data;
+    try {
+      const response = await fetch('/api/deconstruct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-    if (!response.ok) {
-      showError(data.error || "Failed to process document.");
-      return;
+      if (response.ok) {
+        data = await response.json();
+      } else {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || `Server responded with status ${response.status}`);
+      }
+    } catch (fetchErr) {
+      console.warn("Backend API unreachable, attempting client-side Gemini engine fallback...", fetchErr);
+      data = await callGeminiClientFallback(payload);
     }
     
     renderNoticeResults(data);
@@ -1219,7 +1225,7 @@ document.getElementById('btn-run').onclick = async () => {
     
   } catch (e) {
     console.error(e);
-    showError("Network connection issue. Please try again.");
+    showError(e.message || "Network connection issue. Please check server or enter a valid API key.");
   } finally {
     btn.disabled = false;
     noticeInput.disabled = false;
@@ -1227,6 +1233,53 @@ document.getElementById('btn-run').onclick = async () => {
     revealSection.setAttribute('aria-busy', 'false');
   }
 };
+
+async function callGeminiClientFallback(payload) {
+  let key = sessionStorage.getItem('GEMINI_API_KEY');
+  if (!key) {
+    key = prompt("💡 Live Demo Notice: Local Express backend is offline. To test live on mobile, enter your Gemini API key (saved in browser session only):");
+    if (key && key.trim()) {
+      key = key.trim();
+      sessionStorage.setItem('GEMINI_API_KEY', key);
+    } else {
+      throw new Error("Backend server offline. Please start local server.js or provide a Gemini API key.");
+    }
+  }
+
+  const lang = payload.targetLanguage || 'English';
+  const promptText = `Deconstruct the following official document or notice in ${lang}.
+<document_content>
+${payload.text || '[Attached Document Photo/Scan]'}
+</document_content>`;
+
+  const systemInstructionText = `You are Charitas Clew, a supportive public rights advocate. Translate official notices into calm, plain language (${lang}). Output valid JSON with fields: actualMeaning (string), hasDeadline (boolean), deadlineDate (string), deadlineContext (string), actionSteps (array of {title, description}), advocateScript (string).`;
+
+  const contentsParts = [{ text: promptText }];
+  if (payload.image) {
+    const base64Data = payload.image.includes(',') ? payload.image.split(',')[1] : payload.image;
+    contentsParts.push({ inlineData: { mimeType: payload.mimeType || 'image/jpeg', data: base64Data } });
+  }
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: contentsParts }],
+      systemInstruction: { parts: [{ text: systemInstructionText }] },
+      generationConfig: { responseMimeType: "application/json" }
+    })
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.error?.message || "Gemini API request failed.");
+  }
+
+  const resJson = await response.json();
+  const textOutput = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+  return JSON.parse(textOutput);
+}
 </script>
 </body>
 </html>
