@@ -59,15 +59,15 @@ body {
   margin: 0 auto; 
   display: flex; 
   flex-direction: column; 
-  gap: 28px; 
+  gap: 16px; 
 }
 
 header { 
   border-bottom: var(--border-thick); 
-  padding-bottom: 24px; 
+  padding-bottom: 14px; 
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
 .header-top-row {
@@ -77,7 +77,7 @@ header {
 }
 
 .logo-group h1 { 
-  font-size: 2.9rem; 
+  font-size: 2.5rem; 
   font-weight: 900; 
   line-height: 0.9; 
   background: var(--brand-gradient);
@@ -89,38 +89,62 @@ header {
 
 .logo-badge {
   display: inline-block;
-  background: var(--brand-safe);
-  color: #FFFFFF;
   font-size: 0.76rem;
   font-weight: 900;
-  padding: 4px 12px;
   text-transform: uppercase;
-  margin-top: 10px;
-  letter-spacing: 0.06em;
-  border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0px var(--ink);
+  letter-spacing: 0.08em;
+  color: var(--brand-primary);
+  margin-top: 4px;
+  background: var(--surface-alt);
+  padding: 3px 8px;
+  border: 1.5px solid var(--ink);
+  box-shadow: 2px 2px 0px var(--ink);
 }
 
-.explainer-card {
+details.explainer-card {
   background: var(--surface);
   border: var(--border-thick);
-  border-top: 6px solid var(--brand-primary);
+  border-top: 5px solid var(--brand-primary);
   box-shadow: var(--shadow-block);
-  padding: 20px;
-  font-size: 0.92rem;
-  line-height: 1.55;
+  padding: 12px 16px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  transition: all 0.2s ease;
 }
 
-.explainer-header {
+details.explainer-card summary {
   font-weight: 900;
-  font-size: 1.05rem;
-  color: var(--brand-primary);
-  margin-bottom: 6px;
-  letter-spacing: 0.02em;
+  font-size: 0.92rem;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  list-style: none;
+}
+
+details.explainer-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary-badge {
+  font-size: 0.75rem;
+  background: var(--brand-primary);
+  color: #FFFFFF;
+  padding: 3px 8px;
+  border: 1px solid var(--ink);
+  font-weight: 700;
+}
+
+.explainer-content {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--ink);
 }
 
 .explainer-desc {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-weight: 500;
   opacity: 0.95;
 }
@@ -128,16 +152,33 @@ header {
 .explainer-steps {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  font-size: 0.84rem;
+  gap: 8px;
+  font-size: 0.82rem;
   font-weight: 700;
+  margin-bottom: 10px;
 }
 
 .explainer-steps span {
   background: var(--surface-alt);
   border: 1.5px solid var(--ink);
-  padding: 6px 12px;
+  padding: 5px 10px;
   box-shadow: 2px 2px 0px var(--ink);
+}
+
+.micro-advisement-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-alt);
+  border: 1.5px solid var(--ink);
+  border-left: 5px solid var(--brand-warning);
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: 2px 2px 0px var(--ink);
+  margin-bottom: 4px;
 }
 
 .creator-links {
@@ -636,24 +677,30 @@ textarea:disabled {
       <button class="theme-toggle-btn" id="btn-theme" title="Toggle Theme">🌙 Dark</button>
     </div>
 
-    <div class="explainer-card">
-      <div class="explainer-header">💡 What is Charitas Clew & How to Use It</div>
-      <p class="explainer-desc">
-        Charitas Clew is a zero-judgment paperwork sanctuary that transforms dense legal notices, agency letters, utility disconnections, medical bills, and official paperwork into plain language and clear, actionable steps.
-      </p>
-      <div class="explainer-steps">
-        <span>1️⃣ <strong>Input Any Document:</strong> Paste text or upload a photo/PDF scan of ANY official letter or notice.</span>
-        <span>2️⃣ <strong>Simplify:</strong> Click <em>"Simplify Notice"</em> to translate legalese into calm, plain language.</span>
-        <span>3️⃣ <strong>Take Action:</strong> Review your key dates, simple next steps, and hand-off speaking script.</span>
+    <details class="explainer-card">
+      <summary>
+        <span>💡 <strong>What is Charitas Clew & How to Use It</strong></span>
+        <span class="summary-badge">Guide & Scope ▾</span>
+      </summary>
+      <div class="explainer-content">
+        <p class="explainer-desc">
+          Charitas Clew is a zero-judgment paperwork sanctuary that transforms dense legal notices, agency letters, utility disconnections, medical bills, and official paperwork into plain language and clear, actionable steps.
+        </p>
+        <div class="explainer-steps">
+          <span>1️⃣ <strong>Input Any Document:</strong> Paste text or upload a photo/PDF scan of ANY official letter or notice.</span>
+          <span>2️⃣ <strong>Simplify:</strong> Click <em>"Simplify Notice"</em> to translate legalese into calm, plain language.</span>
+          <span>3️⃣ <strong>Take Action:</strong> Review your key dates, simple next steps, and hand-off speaking script.</span>
+        </div>
+        <p style="font-size: 0.8rem; opacity: 0.88; margin-top: 8px; font-weight: 700; border-top: 1px dashed var(--ink); padding-top: 8px;">
+          📄 <strong>Universal Support:</strong> Works with eviction warnings, utility disconnects, SNAP/Medicaid renewals, court summonses, hospital/medical bills, tax agency letters, HOA notices, wage garnishments, and all bureaucratic paperwork.
+        </p>
       </div>
-      <p style="font-size: 0.82rem; opacity: 0.95; margin-top: 10px; font-weight: 700; border-top: 1px dashed var(--ink); padding-top: 8px; color: var(--ink);">
-        ⚖️ <strong>Legal Advisement:</strong> Educational & self-advocacy tool only — not formal legal advice. Please verify document details with a qualified legal aid advocate or caseworker before taking formal action.
-      </p>
-      <p style="font-size: 0.8rem; opacity: 0.88; margin-top: 6px; font-weight: 700;">
-        📄 <strong>Universal Support:</strong> Works with eviction warnings, utility disconnects, SNAP/Medicaid renewals, court summonses, hospital/medical bills, tax agency letters, HOA notices, wage garnishments, and all bureaucratic paperwork.
-      </p>
-    </div>
+    </details>
   </header>
+
+  <div class="micro-advisement-bar" role="note">
+    <span>⚖️ <strong>Legal Advisement:</strong> Educational & self-advocacy tool only — not formal legal advice. Please verify document details with legal aid or a caseworker.</span>
+  </div>
 
   <div id="eol-notice" class="eol-banner" role="alert">
     ⚠️ SERVICE OFFLINE: This automated tool is currently sunsetted. For immediate housing, legal, or utility assistance, please dial <strong>211</strong> or visit your local Legal Aid Society.
