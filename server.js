@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { validateLanguage, validateUpload } from './validators.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -79,53 +80,46 @@ app.post('/api/deconstruct', apiLimiter, async (req, res) => {
     });
   }
 
-  const { text = '', image, mimeType, targetLanguage = 'English' } = req.body;
+  const { text, image, mimeType, targetLanguage } = req.body || {};
 
-  // Security Guard 1: Input presence check
-  if ((!text || typeof text !== 'string' || !text.trim()) && !image) {
+  // Security Guard 1: Target Language Allowlist
+  const langResult = validateLanguage(targetLanguage);
+  if (!langResult.valid) {
+    return res.status(400).json({ error: langResult.error });
+  }
+  const lang = langResult.language;
+
+  // Security Guard 2: Text Validation & Type Pre-check
+  if (text !== undefined && typeof text !== 'string') {
+    return res.status(400).json({ error: 'Invalid text payload format.' });
+  }
+  const rawText = typeof text === 'string' ? text.trim() : '';
+
+  // Input presence check
+  if (!rawText && !image) {
     return res.status(400).json({ error: 'Please provide text or upload a photo of the notice.' });
   }
 
-  // Security Guard 2: Text Length Cap (max 5,000 characters)
-  const cleanedText = sanitizeInput(text);
-  if (cleanedText.length > 5000) {
-    return res.status(400).json({ error: 'Notice text exceeds the maximum allowed length (5,000 characters).' });
+  let cleanedText = '';
+  if (rawText) {
+    cleanedText = sanitizeInput(rawText);
+    if (cleanedText.length > 5000) {
+      return res.status(400).json({ error: 'Notice text exceeds the maximum allowed length (5,000 characters).' });
+    }
+    if (detectPromptInjection(cleanedText)) {
+      return res.status(400).json({ error: 'Invalid notice format detected. Please paste standard document text only.' });
+    }
   }
 
-  // Security Guard 3: Prompt Injection Guard
-  if (detectPromptInjection(cleanedText)) {
-    return res.status(400).json({ error: 'Invalid notice format detected. Please paste standard document text only.' });
-  }
-
-  // Security Guard 4: Image Validation (MIME type and size check)
-  const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
+  // Security Guard 3: Upload Validation (MIME allowlist, base64 integrity, decoded size, magic bytes)
   let inlineDataPart = null;
-
-  if (image) {
-    if (typeof image !== 'string') {
-      return res.status(400).json({ error: 'Invalid image payload format.' });
+  if (image !== undefined && image !== null) {
+    const uploadResult = validateUpload(image, mimeType);
+    if (!uploadResult.valid) {
+      return res.status(400).json({ error: uploadResult.error });
     }
-    const cleanMime = typeof mimeType === 'string' && ALLOWED_MIMES.includes(mimeType.toLowerCase()) 
-      ? mimeType.toLowerCase() 
-      : 'image/jpeg';
-
-    // Check approximate decoded size (Base64 string length * 0.75 <= 7MB limit)
-    if (image.length * 0.75 > 7 * 1024 * 1024) {
-      return res.status(400).json({ error: 'Uploaded file size exceeds the 7MB limit.' });
-    }
-
-    // Strip data URL prefix if present (e.g. data:image/jpeg;base64,...)
-    const base64Data = image.includes(',') ? image.split(',')[1] : image;
-
-    inlineDataPart = {
-      inlineData: {
-        mimeType: cleanMime,
-        data: base64Data
-      }
-    };
+    inlineDataPart = uploadResult.inlineData;
   }
-
-  const lang = typeof targetLanguage === 'string' && targetLanguage.trim() ? targetLanguage.trim() : 'English';
 
   try {
     const ai = new GoogleGenAI({ apiKey });
