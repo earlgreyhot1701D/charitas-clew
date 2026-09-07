@@ -100,8 +100,7 @@ Charitas Clew was conceived, architected, built, and deployed using a 100% Googl
 
 ## 🛡️ Security & Resilience Hardening
 
-- **Prompt Injection Guard**: Regex filters strip control characters and block prompt-hijacking attempts (`ignore instructions`, `jailbreak`, etc.).
-- **XML System Isolation**: User text is wrapped in strict `<document_content>` blocks with system prompts enforcing untrusted data boundaries.
+- **Untrusted Document Isolation**: Document contents are treated as untrusted data and isolated from application-controlled instructions within `<untrusted_document>` delimiters. Model output is constrained by schema and validated at runtime before display.
 - **Backend Model Failover**: Server executes up to 2 attempts per model with a fixed 1000ms delay across candidate Flash models (`gemini-flash-latest` and `gemini-3.5-flash-lite`).
 - **Payload & Rate Limiting**: Express body parser capped at 10MB. Rate
   limiting of 15 requests per 15 minutes per IP is enforced at the Cloud Run
