@@ -1336,25 +1336,40 @@ ${payload.text || '[Attached Document Photo/Scan]'}
     contentsParts.push({ inlineData: { mimeType: payload.mimeType || 'image/jpeg', data: base64Data } });
   }
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`;
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: contentsParts }],
-      systemInstruction: { parts: [{ text: systemInstructionText }] },
-      generationConfig: { responseMimeType: "application/json" }
-    })
-  });
+  const candidateModels = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.5-flash-lite', 'gemini-flash-latest'];
+  let lastErrMessage = "Gemini API request failed.";
 
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    throw new Error(errData.error?.message || "Gemini API request failed.");
+  for (const modelName of candidateModels) {
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: contentsParts }],
+          systemInstruction: { parts: [{ text: systemInstructionText }] },
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        lastErrMessage = errData.error?.message || `Model ${modelName} returned HTTP ${response.status}`;
+        console.warn(`Client fallback model ${modelName} failed (${response.status}): ${lastErrMessage}. Trying next model...`);
+        continue; // Failover to next candidate model
+      }
+
+      const resJson = await response.json();
+      const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error("Received empty response from Gemini API.");
+      return JSON.parse(rawText);
+    } catch (err) {
+      lastErrMessage = err.message;
+      console.warn(`Candidate model ${modelName} error: ${err.message}. Trying next candidate...`);
+    }
   }
 
-  const resJson = await response.json();
-  const textOutput = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-  return JSON.parse(textOutput);
+  throw new Error(`All Gemini models busy: ${lastErrMessage}`);
 }
 </script>
 </body>
