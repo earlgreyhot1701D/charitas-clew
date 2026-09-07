@@ -623,11 +623,13 @@ describe('Charitas Clew API Regression Test Suite', () => {
   });
 
   // ==========================================
-  // 6. Gemini Failures and Retry Behavior
+  // 6. Gemini Failures, Output Validation & Retry Behavior
   // ==========================================
 
-  test('Gemini returning malformed JSON results in 500 error response', async () => {
+  test('Gemini returning malformed JSON results in 502 error and does NOT retry model', async () => {
+    let callCount = 0;
     setGenerateContentFn(async () => {
+      callCount++;
       return { text: 'This is not valid JSON { broken' };
     });
 
@@ -635,15 +637,111 @@ describe('Charitas Clew API Regression Test Suite', () => {
       .post('/api/deconstruct')
       .send({ text: 'Valid notice text' });
 
-    assert.equal(res.status, 500);
-    assert.equal(res.body.error, 'Failed to process document. Please try again later.');
+    assert.equal(res.status, 502);
+    assert.equal(res.body.error, "We couldn't safely interpret this notice. Please try again.");
+    assert.equal(callCount, 1, 'Malformed JSON must not trigger provider retries');
   });
 
-  test('Gemini throwing an unrecoverable error across all models results in 500 error response', async () => {
+  test('Gemini returning schema-invalid JSON (missing actualMeaning) results in 502 and does NOT retry', async () => {
     let callCount = 0;
     setGenerateContentFn(async () => {
       callCount++;
-      throw new Error('Gemini API Service Unavailable');
+      const invalid = { ...dummyMockSuccessResponse };
+      delete invalid.actualMeaning;
+      return { text: JSON.stringify(invalid) };
+    });
+
+    const res = await request(app)
+      .post('/api/deconstruct')
+      .send({ text: 'Valid notice text' });
+
+    assert.equal(res.status, 502);
+    assert.equal(res.body.error, "We couldn't safely interpret this notice. Please try again.");
+    assert.equal(callCount, 1, 'Schema-invalid JSON must not trigger provider retries');
+  });
+
+  test('Gemini returning top-level array instead of object results in 502 and does NOT retry', async () => {
+    let callCount = 0;
+    setGenerateContentFn(async () => {
+      callCount++;
+      return { text: JSON.stringify([dummyMockSuccessResponse]) };
+    });
+
+    const res = await request(app)
+      .post('/api/deconstruct')
+      .send({ text: 'Valid notice text' });
+
+    assert.equal(res.status, 502);
+    assert.equal(res.body.error, "We couldn't safely interpret this notice. Please try again.");
+    assert.equal(callCount, 1);
+  });
+
+  test('Gemini returning string instead of boolean for hasDeadline results in 502', async () => {
+    let callCount = 0;
+    setGenerateContentFn(async () => {
+      callCount++;
+      const invalid = { ...dummyMockSuccessResponse, hasDeadline: 'true' };
+      return { text: JSON.stringify(invalid) };
+    });
+
+    const res = await request(app)
+      .post('/api/deconstruct')
+      .send({ text: 'Valid notice text' });
+
+    assert.equal(res.status, 502);
+    assert.equal(res.body.error, "We couldn't safely interpret this notice. Please try again.");
+    assert.equal(callCount, 1);
+  });
+
+  test('Gemini returning deadline consistency violation (hasDeadline: true without date/context) results in 502', async () => {
+    let callCount = 0;
+    setGenerateContentFn(async () => {
+      callCount++;
+      const invalid = {
+        ...dummyMockSuccessResponse,
+        hasDeadline: true,
+        deadlineDate: null,
+        deadlineContext: null
+      };
+      return { text: JSON.stringify(invalid) };
+    });
+
+    const res = await request(app)
+      .post('/api/deconstruct')
+      .send({ text: 'Valid notice text' });
+
+    assert.equal(res.status, 502);
+    assert.equal(res.body.error, "We couldn't safely interpret this notice. Please try again.");
+    assert.equal(callCount, 1);
+  });
+
+  test('Gemini returning unexpected extra properties results in 502 (rejected policy)', async () => {
+    let callCount = 0;
+    setGenerateContentFn(async () => {
+      callCount++;
+      const withExtra = {
+        ...dummyMockSuccessResponse,
+        unexpectedProperty: 'hallucinated or injected'
+      };
+      return { text: JSON.stringify(withExtra) };
+    });
+
+    const res = await request(app)
+      .post('/api/deconstruct')
+      .send({ text: 'Valid notice text' });
+
+    assert.equal(res.status, 502);
+    assert.equal(res.body.error, "We couldn't safely interpret this notice. Please try again.");
+    assert.equal(callCount, 1);
+  });
+
+  test('Gemini throwing HTTP 400 Bad Request stops immediately without retrying or fallback', async () => {
+    let callCount = 0;
+    setGenerateContentFn(async () => {
+      callCount++;
+      const err = new Error('Invalid argument supplied');
+      err.status = 400;
+      throw err;
     });
 
     const res = await request(app)
@@ -652,11 +750,48 @@ describe('Charitas Clew API Regression Test Suite', () => {
 
     assert.equal(res.status, 500);
     assert.equal(res.body.error, 'Failed to process document. Please try again later.');
-    // 2 models x 2 attempts = 4 total attempts
-    assert.equal(callCount, 4);
+    assert.equal(callCount, 1, 'HTTP 400 must NOT retry same model and must NOT move to fallback model');
   });
 
-  test('Gemini 503 error triggers retry attempt on same model', async () => {
+  test('Gemini safety block error stops immediately without retrying or fallback', async () => {
+    let callCount = 0;
+    setGenerateContentFn(async () => {
+      callCount++;
+      const err = new Error('Candidate was blocked due to SAFETY');
+      throw err;
+    });
+
+    const res = await request(app)
+      .post('/api/deconstruct')
+      .send({ text: 'Valid notice text' });
+
+    assert.equal(res.status, 500);
+    assert.equal(res.body.error, 'Failed to process document. Please try again later.');
+    assert.equal(callCount, 1, 'Safety blocks must NOT retry or switch models');
+  });
+
+  test('Gemini 429 rate limit triggers retry on same model and succeeds', async () => {
+    let callCount = 0;
+    setGenerateContentFn(async () => {
+      callCount++;
+      if (callCount === 1) {
+        const err = new Error('Resource has been exhausted (e.g. check quota)');
+        err.status = 429;
+        throw err;
+      }
+      return { text: JSON.stringify(dummyMockSuccessResponse) };
+    });
+
+    const res = await request(app)
+      .post('/api/deconstruct')
+      .send({ text: 'Valid notice text' });
+
+    assert.equal(res.status, 200);
+    assert.equal(callCount, 2, 'HTTP 429 should retry on the same model');
+    assert.equal(res.body.actualMeaning, dummyMockSuccessResponse.actualMeaning);
+  });
+
+  test('Gemini 503 error triggers retry attempt on same model and succeeds', async () => {
     let callCount = 0;
     setGenerateContentFn(async () => {
       callCount++;
@@ -673,8 +808,27 @@ describe('Charitas Clew API Regression Test Suite', () => {
       .send({ text: 'Valid notice text' });
 
     assert.equal(res.status, 200);
-    assert.equal(callCount, 2);
+    assert.equal(callCount, 2, 'HTTP 503 should retry on the same model');
     assert.equal(res.body.actualMeaning, dummyMockSuccessResponse.actualMeaning);
+  });
+
+  test('transient error across all models exhausts retries and never exceeds 4 attempts', async () => {
+    let callCount = 0;
+    setGenerateContentFn(async () => {
+      callCount++;
+      const err = new Error('Gemini API Service Unavailable');
+      err.status = 503;
+      throw err;
+    });
+
+    const res = await request(app)
+      .post('/api/deconstruct')
+      .send({ text: 'Valid notice text' });
+
+    assert.equal(res.status, 500);
+    assert.equal(res.body.error, 'Failed to process document. Please try again later.');
+    // 2 models x 2 attempts = 4 total attempts maximum
+    assert.equal(callCount, 4);
   });
 
   // ==========================================

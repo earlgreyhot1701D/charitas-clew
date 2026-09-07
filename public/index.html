@@ -781,7 +781,7 @@ textarea:disabled {
           <span>3️⃣ <strong>Take Action:</strong> Review your key dates, simple next steps, and hand-off speaking script.</span>
         </div>
         <p style="font-size: 0.8rem; opacity: 0.88; margin-top: 8px; font-weight: 700; border-top: 1px dashed var(--ink); padding-top: 8px;">
-          📄 <strong>Universal Support:</strong> Works with eviction warnings, utility disconnects, SNAP/Medicaid renewals, court summonses, hospital/medical bills, tax agency letters, HOA notices, wage garnishments, and all bureaucratic paperwork.
+          📄 <strong>Common Notices:</strong> Works with eviction warnings, utility disconnects, SNAP/Medicaid renewals, court summonses, hospital/medical bills, tax agency letters, HOA notices, and wage garnishments.
         </p>
       </div>
     </details>
@@ -800,7 +800,7 @@ textarea:disabled {
   <section class="card intake">
     <button class="restore-pill" id="btn-restore">✨ Restore Last Simplified Notice</button>
 
-    <div class="preset-header">Try a Sample Notice (Works with ANY Official Document):</div>
+    <div class="preset-header">Try a Sample Notice:</div>
     <div class="presets-grid">
       <button class="preset-chip" data-preset="eviction">🏠 Rent / Eviction Warning</button>
       <button class="preset-chip" data-preset="utility">⚡ Utility Service Disconnect</button>
@@ -856,7 +856,7 @@ textarea:disabled {
       <span class="spinner-large"></span>
       <div>
         <strong style="font-size: 0.98rem; color: var(--brand-primary);">⚡ Deconstructing Notice with Gemini...</strong>
-        <p style="font-size: 0.82rem; opacity: 0.9; margin-top: 2px;">Translating legalese, pinpointing statutory deadlines, and drafting your speaking script...</p>
+        <p style="font-size: 0.82rem; opacity: 0.9; margin-top: 2px;">Translating legalese, checking for critical dates, and drafting your speaking script...</p>
       </div>
     </div>
     <div class="thinking-progress-bar">
@@ -1194,15 +1194,13 @@ function renderNoticeResults(data) {
   const deadlineBox = document.getElementById('deadline-box');
   if (data.hasDeadline) {
     deadlineBox.className = "stat-box alert-has-deadline";
-    document.getElementById('deadline-val').innerText = data.deadlineDate || 'ACTION NEEDED';
+    document.getElementById('deadline-val').innerText = data.deadlineDate || 'Date found in your document';
+    document.getElementById('deadline-context').innerText = (data.deadlineContext ? data.deadlineContext + ' ' : '') + 'For important deadlines, confirm with legal aid, the issuing agency, court staff, or another authoritative source.';
   } else {
     deadlineBox.className = "stat-box alert-no-deadline";
-    document.getElementById('deadline-val').innerText = 'NO IMMEDIATE DEADLINE';
+    document.getElementById('deadline-val').innerText = 'No explicit date identified in this document';
+    document.getElementById('deadline-context').innerText = 'Some deadlines may depend on when you received or were served with the notice and may not appear explicitly in the document. For important deadlines, confirm with legal aid, the issuing agency, court staff, or another authoritative source.';
   }
-  
-  document.getElementById('deadline-context').innerText = data.hasDeadline 
-    ? (data.deadlineContext || 'Follow up before date indicated.') 
-    : 'No critical date enforced in notice.';
     
   document.getElementById('script-text').innerText = data.advocateScript || 'No speaking script generated.';
   
