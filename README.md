@@ -50,12 +50,14 @@ Whether a user pastes text or uploads a camera photo/PDF scan of any official le
 
 1. **Universal Multimodal Input (Text or Photo/Scan)**:
    - Accepts text pastes or direct smartphone camera uploads (JPG, PNG, WEBP, HEIC, PDF) for any official document.
-2. **Mobile Native Share & Audio**:
+2. **Six-Language Output**:
+   - Full deconstruction, deadlines, action steps, and speaking script render in English, Spanish, Vietnamese, Chinese, Arabic, or French.
+3. **Mobile Native Share & Audio**:
    - **📲 Share / Print**: 1-tap mobile share (SMS, WhatsApp, Apple Notes, Email) via Web Share API (`navigator.share`), plus clean PDF print formatting.
    - **🔊 Speech TTS**: 1-tap audio synthesis so users can listen to their speaking script while waiting in line.
-3. **1-Tap Emergency Assistance**:
+4. **1-Tap Emergency Assistance**:
    - Direct `tel:211` 1-tap dialing for immediate housing/utility crisis support, HUD counseling, and legal aid locator.
-4. **Sanctuary Persistence & Privacy**:
+5. **Sanctuary Persistence & Privacy**:
    - Automatic `localStorage` persistence (`✨ Restore Last Sanctuary Notice`) so phone screen locks or page reloads don't erase output.
 
 ---
@@ -93,6 +95,7 @@ Charitas Clew was conceived, architected, built, and deployed using a 100% Googl
   service. Behind the Firebase Hosting CDN, request counting is per-edge rather
   than global, so the effective limit on the public domain is looser than at
   the service itself.
+- **Server-Side Credential Isolation**: The Gemini API key is stored in Google Secret Manager and injected into the Cloud Run container at runtime. No key is ever present in client-served files, and the browser never calls the Gemini API directly.
 - **Graceful EOL Sunset**: Activates 211 emergency legal aid handoff upon hardcoded sunset date (`2027-01-01`) or upon backend server connectivity failure / 5xx response.
 
 ---
@@ -113,8 +116,8 @@ Created by **La-Shara Cordero** for the DEV Weekend Challenge.
 
 ```bash
 # 1. Clone & install dependencies
-git clone https://github.com/earlgreyhot1701d/Clew-Labs.git
-cd charitas
+git clone https://github.com/earlgreyhot1701D/charitas-clew.git
+cd charitas-clew
 npm install
 
 # 2. Configure environment
