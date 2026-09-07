@@ -21,7 +21,7 @@ export function resetGenerateContentFn() {
   generateContentFn = (ai, params) => ai.models.generateContent(params);
 }
 
-// Secure HTTP headers with custom CSP for Google Fonts and inline scripts
+// Secure HTTP headers with custom CSP aligned with Firebase Hosting headers
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -29,14 +29,20 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
     }
-  }
+  },
+  frameguard: { action: 'deny' }
 }));
 
 app.use(morgan('tiny'));
 app.use(express.json({ limit: '10mb' })); // Payload limit for image uploads
 app.use(express.static(path.join(__dirname, 'public')));
-// Note: Hop count unverified; confirm against req.ip after deploy as Firebase Hosting + Cloud Run may add a second hop
+// Note: trust proxy 1 trusts the immediate Cloud Run GFE proxy to prevent spoofed X-Forwarded-For bypass
 app.set('trust proxy', 1);
 
 // Rate limiter for API endpoint (15 requests per 15 mins per IP)
@@ -46,6 +52,7 @@ const apiLimiter = rateLimit({
   message: { error: 'Rate limit exceeded. Please wait a few minutes before trying again.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 // Input Sanitizer: strip non-printable ASCII control characters (preserving newlines and tabs)
@@ -141,10 +148,19 @@ FIELD SPECIFICATIONS:
 6. advocateScript: FIRST-PERSON SCRIPT FOR THE USER TO SPEAK OUT LOUD. This MUST be written strictly in FIRST PERSON ("Hello, my name is [Name] and I am a resident at [Address]. I am calling regarding the notice to...") for the USER to read out loud when calling or visiting the property manager, contractor, clerk, or caseworker. NEVER write advice addressed to the user (e.g. do NOT write "Don't worry, take a deep breath"). Write ONLY the exact words the user should speak to the entity on the phone or in person.`;
 
     const candidateModels = ['gemini-flash-latest', 'gemini-3.5-flash-lite'];
+    // Overall request timeout budget (30s) to guarantee response completes before Firebase Hosting 60s rewrite timeout
+    const requestDeadline = Date.now() + 30000;
 
     for (const targetModel of candidateModels) {
       let shouldStopAllAttempts = false;
       for (let attempt = 1; attempt <= 2; attempt++) {
+        const remainingBudget = requestDeadline - Date.now();
+        if (remainingBudget <= 1000) {
+          shouldStopAllAttempts = true;
+          break;
+        }
+        const attemptTimeout = Math.min(15000, remainingBudget);
+
         try {
           response = await withTimeout(
             generateContentFn(ai, {
@@ -152,7 +168,7 @@ FIELD SPECIFICATIONS:
               contents: contentsPayload,
               config: {
                 systemInstruction: systemInstructionText,
-                httpOptions: { timeout: 15000 },
+                httpOptions: { timeout: attemptTimeout },
                 responseMimeType: "application/json",
                 responseSchema: {
                   type: "OBJECT",
@@ -177,7 +193,7 @@ FIELD SPECIFICATIONS:
                 }
               }
             }),
-            15000,
+            attemptTimeout,
             'Gemini request timed out'
           );
           break; // Success for current model
@@ -192,7 +208,10 @@ FIELD SPECIFICATIONS:
           }
 
           if (attempt < 2) {
-            await new Promise(r => setTimeout(r, 1000));
+            const backoffDelay = Math.min(1000, Math.max(0, requestDeadline - Date.now() - 1000));
+            if (backoffDelay > 0) {
+              await new Promise(r => setTimeout(r, backoffDelay));
+            }
           }
         }
       }
@@ -233,6 +252,21 @@ FIELD SPECIFICATIONS:
     console.error("API Error:", error);
     res.status(500).json({ error: 'Failed to process document. Please try again later.' });
   }
+});
+
+// Centralized client-safe error handler for body-parser and unexpected errors
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large' || err.status === 413) {
+    return res.status(413).json({ error: 'Request payload exceeds maximum allowed size.' });
+  }
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Malformed JSON payload.' });
+  }
+  console.error('Unhandled server error:', err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status >= 400 && status < 600 ? status : 500).json({
+    error: status >= 500 ? 'Internal server error. Please try again later.' : err.message
+  });
 });
 
 // STUB: Future /api/models endpoint for dynamic model discovery via ModelService.ListModels.
