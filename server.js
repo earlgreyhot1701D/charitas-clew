@@ -24,6 +24,7 @@ app.use(helmet({
 
 app.use(morgan('tiny'));
 app.use(express.json({ limit: '10mb' })); // Payload limit for image uploads
+app.use(express.static(path.join(__dirname, 'public')));
 // Note: Hop count unverified; confirm against req.ip after deploy as Firebase Hosting + Cloud Run may add a second hop
 app.set('trust proxy', 1);
 

@@ -1173,8 +1173,10 @@ function hideError() {
   banner.classList.remove('active');
 }
 
+let isSunsetted = false;
 // Graceful EOL & Failure Fallback
 function triggerEOL() {
+  isSunsetted = true;
   document.getElementById('eol-notice').classList.add('active');
   document.getElementById('btn-run').disabled = true;
   noticeInput.disabled = true;
@@ -1327,9 +1329,11 @@ document.getElementById('btn-run').onclick = async () => {
     console.error(e);
     showError(e.message || "An unexpected error occurred.");
   } finally {
-    btn.disabled = false;
-    noticeInput.disabled = false;
-    btn.innerHTML = 'Simplify Notice ↳';
+    if (!isSunsetted) {
+      btn.disabled = false;
+      noticeInput.disabled = false;
+      btn.innerHTML = 'Simplify Notice ↳';
+    }
     revealSection.setAttribute('aria-busy', 'false');
     thinkingCard.style.display = 'none';
   }
