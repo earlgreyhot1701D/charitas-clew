@@ -938,7 +938,9 @@ textarea:disabled {
   </footer>
 </div>
 
-<script>
+<script type="module">
+import { renderActionSteps, classifyFrontendError, isCalendarSunset } from './ui-helpers.js';
+
 // Sample Presets Data
 const PRESETS = {
   eviction: `NOTICE TO QUIT - PAY RENT OR VACATE WITHIN 3 DAYS
@@ -1183,7 +1185,7 @@ function triggerEOL() {
   document.getElementById('btn-run').innerText = 'System Sunsetted';
 }
 
-if (new Date() > new Date('2027-01-01')) { triggerEOL(); }
+if (isCalendarSunset()) { triggerEOL(); }
 
 function renderNoticeResults(data) {
   if (!data) return;
@@ -1205,9 +1207,7 @@ function renderNoticeResults(data) {
   document.getElementById('script-text').innerText = data.advocateScript || 'No speaking script generated.';
   
   if (Array.isArray(data.actionSteps) && data.actionSteps.length > 0) {
-    document.getElementById('action-steps-container').innerHTML = data.actionSteps.map((step, idx) => 
-      `<div class="step-item"><strong>Step ${idx + 1}: ${step.title}</strong><span>${step.description}</span></div>`
-    ).join('');
+    renderActionSteps(document.getElementById('action-steps-container'), data.actionSteps);
   }
 }
 
@@ -1304,8 +1304,8 @@ document.getElementById('btn-run').onclick = async () => {
       });
     } catch (networkErr) {
       console.error("Network fetch failed:", networkErr);
-      showError("Network connection error. Primary service unreachable.");
-      triggerEOL();
+      const err = classifyFrontendError({ isNetworkError: true });
+      showError(err.message);
       return;
     }
 
@@ -1318,12 +1318,8 @@ document.getElementById('btn-run').onclick = async () => {
       } catch(e){}
     } else {
       const errData = await response.json().catch(() => ({}));
-      const errMessage = errData.error || `Server returned error status ${response.status}.`;
-      showError(errMessage);
-      
-      if (response.status >= 500) {
-        triggerEOL();
-      }
+      const err = classifyFrontendError({ status: response.status, errMessage: errData.error });
+      showError(err.message);
     }
   } catch (e) {
     console.error(e);
