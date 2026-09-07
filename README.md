@@ -10,6 +10,19 @@
 
 ---
 
+## Hackathon Submission Snapshot
+
+The version submitted to the DEV Weekend Challenge at the
+September 6, 2026 deadline is preserved at:
+
+`hackathon-submission-2026-09-06`
+
+Commits after that tag are post-submission security, testing,
+accessibility, reliability, and maintenance improvements and are not
+represented as work completed during the challenge period.
+
+---
+
 ## 🚨 The Problem
 
 Every single day, thousands of vulnerable individuals, low-income families, seniors, and non-native English speakers receive dense, overwhelming official paperwork in the mail:
