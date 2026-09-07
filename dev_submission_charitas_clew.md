@@ -58,7 +58,7 @@ Building a zero-judgment public rights sanctuary in a single weekend meant solvi
 
 Most legal or civic tools export a downloadable PDF. That works in an office setting. It fails in a welfare office waiting room or courthouse hallway. 
 
-Our core user base accesses Charitas Clew on smartphones. Mobile users cannot easily print PDFs on the spot, and handing a caseworker a phone displaying an adversarial legal PDF usually increases tension. 
+Our core user base accesses Charitas Clew on smartphones. That is why the interface is intentionally designed mobile-first. When opened on wide desktop displays, the layout purposefully maintains a centered, focused mobile sanctuary container rather than stretching wide, ensuring the user experience remains uniform across every device. Mobile users cannot easily print PDFs on the spot, and handing a caseworker a phone displaying an adversarial legal PDF usually increases tension. 
 
 We built a mobile action system tailored for that physical reality. We integrated the Web Share API for native iOS and Android share sheets, allowing users to text their personal speaking script directly to themselves or a family member. We also added browser speech synthesis. A user can tap an audio button to listen to their speaking script in headphones, letting them practice reading it out loud before walking up to the desk.
 

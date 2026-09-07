@@ -33,6 +33,10 @@ These documents are formatted in dense, opaque legalese. The results are devasta
 
 **Charitas Clew** is a zero-judgment, mobile-first public rights sanctuary that works with **ANY official document, legal notice, government letter, or billing statement**.
 
+> [!NOTE]
+> **📱 Mobile-First Design Intent:**  
+> Charitas Clew is purpose-built to be **mobile-first**, optimized specifically for smartphone screens in physical waiting rooms, courthouse hallways, and emergency situations. When viewed on wide desktop monitors, the interface intentionally maintains a centered, focused mobile sanctuary container rather than stretching across wide viewports.
+
 Whether a user pastes text or uploads a camera photo/PDF scan of any official letter:
 
 - **Plain-English Deconstruction**: Strips jargon and explains what the letter actually demands.
