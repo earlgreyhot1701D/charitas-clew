@@ -87,9 +87,9 @@ Charitas Clew was conceived, architected, built, and deployed using a 100% Googl
 
 - **Prompt Injection Guard**: Regex filters strip control characters and block prompt-hijacking attempts (`ignore instructions`, `jailbreak`, etc.).
 - **XML System Isolation**: User text is wrapped in strict `<document_content>` blocks with system prompts enforcing untrusted data boundaries.
-- **Model Deprecation Resilience**: Built-in dynamic fallback to `gemini-flash-latest` via Google's `ModelService.ListModels` verification, ensuring continuous uptime when legacy model strings are deprecated.
-- **Payload & Rate Limiting**: Express body parser capped at 10MB; API protected by rate limiting (15 req / 15 min per IP).
-- **Graceful EOL Sunset**: Built-in offline fallback displaying 211 and legal aid resources if backend connectivity is unavailable.
+- **Backend Model Failover**: Server executes up to 2 attempts per model with a fixed 1000ms delay across candidate Flash models (`gemini-flash-latest` and `gemini-3.5-flash-lite`).
+- **Payload & Rate Limiting**: Express body parser capped at 10MB; API protected by rate limiting (15 req / 15 min per IP) with Express proxy trust.
+- **Graceful EOL Sunset**: Activates 211 emergency legal aid handoff upon hardcoded sunset date (`2027-01-01`) or upon backend server connectivity failure / 5xx response.
 
 ---
 

@@ -836,7 +836,7 @@ textarea:disabled {
     <div class="dropzone" id="dropzone" role="button" tabindex="0" title="Click or drop a photo of your notice">
       <span style="font-size: 1.4rem;">📷</span>
       <span class="dropzone-text">Upload Photo or Scan of Document</span>
-      <span class="dropzone-subtext">Click to choose image or drag & drop (JPG, PNG, WEBP, PDF up to 5MB)</span>
+      <span class="dropzone-subtext">Click to choose image or drag & drop (JPG, PNG, WEBP, PDF up to 7MB)</span>
     </div>
 
     <div class="file-preview" id="file-preview">
@@ -1293,47 +1293,39 @@ document.getElementById('btn-run').onclick = async () => {
       payload.mimeType = selectedMimeType;
     }
 
-    let data;
+    let response;
     try {
-      let response = await fetch('/api/deconstruct', {
+      response = await fetch('/api/deconstruct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      }).catch(() => null);
-
-      if (!response || !response.ok) {
-        // Fallback to active tunnel backend
-        response = await fetch('https://charitas-clew-api.loca.lt/api/deconstruct', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Bypass-Tunnel-Reminder': 'true'
-          },
-          body: JSON.stringify(payload)
-        }).catch(() => null);
-      }
-
-      if (response && response.ok) {
-        data = await response.json();
-      } else {
-        const errJson = response ? await response.json().catch(() => ({})) : {};
-        throw new Error(errJson.error || "Primary backend server unreachable.");
-      }
-    } catch (fetchErr) {
-      console.warn("Backend API unreachable, attempting client-side Gemini engine fallback...", fetchErr);
-      data = await callGeminiClientFallback(payload);
+      });
+    } catch (networkErr) {
+      console.error("Network fetch failed:", networkErr);
+      showError("Network connection error. Primary service unreachable.");
+      triggerEOL();
+      return;
     }
-    
-    renderNoticeResults(data);
 
-    try {
-      localStorage.setItem('charitas_last_notice', JSON.stringify(data));
-      btnRestore.classList.remove('active');
-    } catch(e){}
-    
+    if (response.ok) {
+      const data = await response.json();
+      renderNoticeResults(data);
+      try {
+        localStorage.setItem('charitas_last_notice', JSON.stringify(data));
+        btnRestore.classList.remove('active');
+      } catch(e){}
+    } else {
+      const errData = await response.json().catch(() => ({}));
+      const errMessage = errData.error || `Server returned error status ${response.status}.`;
+      showError(errMessage);
+      
+      if (response.status >= 500) {
+        triggerEOL();
+      }
+    }
   } catch (e) {
     console.error(e);
-    showError(e.message || "Google AI service is currently busy. Please try again in a moment.");
+    showError(e.message || "An unexpected error occurred.");
   } finally {
     btn.disabled = false;
     noticeInput.disabled = false;
@@ -1342,72 +1334,6 @@ document.getElementById('btn-run').onclick = async () => {
     thinkingCard.style.display = 'none';
   }
 };
-
-async function callGeminiClientFallback(payload) {
-  let key = sessionStorage.getItem('GEMINI_API_KEY') || ('AQ.Ab8RN6KunnCBogBfcum6_3_' + 'afvo2UakEFk1GLAwP9CRE9yGW0w');
-  if (!key) {
-    throw new Error("Backend server offline and no API key available.");
-  }
-
-  const lang = payload.targetLanguage || 'English';
-  const promptText = `Deconstruct the following official document or notice in ${lang}.
-<document_content>
-${payload.text || '[Attached Document Photo/Scan]'}
-</document_content>`;
-
-  const systemInstructionText = `You are Charitas Clew, a supportive public rights advocate. Translate official notices into calm, plain language (${lang}).
-
-FIELD SPECIFICATIONS:
-1. actualMeaning: Plain-English summary demystifying what this document demands or announces.
-2. hasDeadline: true if a statutory/procedural deadline exists, false otherwise.
-3. deadlineDate: Specific date string or "No Immediate Deadline".
-4. deadlineContext: Short explanation of what happens on or by that date.
-5. actionSteps: Array of 2-3 actionable, reassuring next steps.
-6. advocateScript: FIRST-PERSON SCRIPT FOR THE USER TO SPEAK OUT LOUD. This MUST be written strictly in FIRST PERSON ("Hello, my name is [Name] and I am a resident at [Address]. I am calling regarding the notice to...") for the USER to read out loud when calling or visiting the property manager, contractor, clerk, or caseworker. NEVER write advice addressed to the user (e.g. do NOT write "Don't worry, take a deep breath"). Write ONLY the exact words the user should speak to the entity on the phone or in person.
-
-CRITICAL SAFETY RULE: Output ONLY valid JSON matching fields: actualMeaning (string), hasDeadline (boolean), deadlineDate (string), deadlineContext (string), actionSteps (array of {title, description}), advocateScript (string).`;
-
-  const contentsParts = [{ text: promptText }];
-  if (payload.image) {
-    const base64Data = payload.image.includes(',') ? payload.image.split(',')[1] : payload.image;
-    contentsParts.push({ inlineData: { mimeType: payload.mimeType || 'image/jpeg', data: base64Data } });
-  }
-
-  const candidateModels = ['gemini-flash-latest', 'gemini-3.5-flash-lite'];
-  let lastErrMessage = "Gemini API request failed.";
-
-  for (const modelName of candidateModels) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: contentsParts }],
-          systemInstruction: { parts: [{ text: systemInstructionText }] },
-          generationConfig: { responseMimeType: "application/json" }
-        })
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        lastErrMessage = errData.error?.message || `Model ${modelName} returned HTTP ${response.status}`;
-        console.warn(`Client fallback model ${modelName} failed (${response.status}): ${lastErrMessage}. Trying next model...`);
-        continue; // Failover to next candidate model
-      }
-
-      const resJson = await response.json();
-      const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!rawText) throw new Error("Received empty response from Gemini API.");
-      return JSON.parse(rawText);
-    } catch (err) {
-      lastErrMessage = err.message;
-      console.warn(`Candidate model ${modelName} error: ${err.message}. Trying next candidate...`);
-    }
-  }
-
-  throw new Error(`All Gemini models busy: ${lastErrMessage}`);
-}
 </script>
 </body>
 </html>
