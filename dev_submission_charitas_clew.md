@@ -11,13 +11,13 @@ series: Clew Suite
 
 I spent Friday night staring at a mock municipal utility shutoff notice. The text was dense. The language was punitive. The deadline was buried in a block of legal code on page two.
 
-Generosity is often framed as giving time or money. I think generosity is also removing friction. Millions of vulnerable and non-native speaking families receive legalistic notices, like eviction warnings, utility shutoffs, medical bills, or benefit discontinuances, written in deliberately adversarial legalese.
+Generosity usually shows up as time or money, and that kind of giving matters. I think it can also look like removing friction. Millions of vulnerable and non-native speaking families receive legalistic notices, like eviction warnings, utility shutoffs, medical bills, or benefit discontinuances, written in deliberately adversarial legalese.
 
-The emotional and cognitive weight is massive. Our public systems often demand that exhausted people decode post-graduate-level bureaucratic threats just to keep their power on.
+The emotional and cognitive weight is massive. These notices are dense no matter who is reading them. I still read some of them twice, and most people meet one while already having a hard week.
 
 ## What I Built
 
-I directed the build of [Charitas Clew](https://github.com/earlgreyhot1701D/charitas-clew). It is an open-source, zero-judgment public rights sanctuary and paperwork engine. Charitas Clew ingests overwhelming institutional notices and uses Google AI to decompress the legal gravity into plain-language clarity.
+I directed the build of [Charitas Clew](https://github.com/earlgreyhot1701D/charitas-clew). It is an open-source, zero-judgment paperwork engine for public notices. Charitas Clew ingests overwhelming institutional notices and uses Google AI to decompress the legal gravity into plain-language clarity.
 
 Instead of a generic chat interface, it outputs a strict Action Protocol:
 
@@ -56,13 +56,13 @@ The entire project lifecycle, from initial ideation to code generation and Cloud
 
 ![100% Google Stack Architecture](https://charitas-clew.web.app/google-stack-architecture.png)
 
-Building a zero-judgment public rights sanctuary in a single weekend meant solving real human problems with technical rigor. Here is where the seams showed, and how we reinforced them.
+Building this in a single weekend meant solving real human problems with technical rigor. Here is where the seams showed, and how we reinforced them.
 
 ### Software happens in physical waiting rooms.
 
 Most legal or civic tools export a downloadable PDF. That works in an office setting. It fails in a welfare office waiting room or courthouse hallway. 
 
-Our core user base accesses Charitas Clew on smartphones. That is why the interface is intentionally designed mobile-first. When opened on wide desktop displays, the layout purposefully maintains a centered, focused mobile sanctuary container rather than stretching wide, ensuring the user experience remains uniform across every device. Mobile users cannot easily print PDFs on the spot, and handing a caseworker a phone displaying an adversarial legal PDF usually increases tension. 
+Our core user base accesses Charitas Clew on smartphones. That is why the interface is intentionally designed mobile-first. When opened on wide desktop displays, the layout purposefully maintains a centered, focused mobile column rather than stretching wide, ensuring the user experience remains uniform across every device. Mobile users cannot easily print PDFs on the spot, and handing a caseworker a phone displaying an adversarial legal PDF usually increases tension. 
 
 We built a mobile action system tailored for that physical reality. We integrated the Web Share API for native iOS and Android share sheets, allowing users to text their personal speaking script directly to themselves or a family member. We also added browser speech synthesis. A user can tap an audio button to listen to their speaking script in headphones, letting them practice reading it out loud before walking up to the desk.
 

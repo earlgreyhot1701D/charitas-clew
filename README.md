@@ -1,4 +1,4 @@
-# 🌊 Charitas Clew | Public Rights & Paperwork Sanctuary
+# 🌊 Charitas Clew | Public Rights & Paperwork Engine
 
 > **DEV Weekend Challenge Entry (Generosity & Public Good)**  
 > **Built 100% with Google Tech Stack:** Google Gemini Flash • Google Cloud Run • Firebase Hosting  
@@ -31,11 +31,11 @@ These documents are formatted in dense, opaque legalese. The results are devasta
 
 ## 🛡️ The Solution: Charitas Clew
 
-**Charitas Clew** is a zero-judgment, mobile-first public rights sanctuary that works with **ANY official document, legal notice, government letter, or billing statement**.
+**Charitas Clew** is a zero-judgment, mobile-first paperwork engine that works with **ANY official document, legal notice, government letter, or billing statement**.
 
 > [!NOTE]
 > **📱 Mobile-First Design Intent:**  
-> Charitas Clew is purpose-built to be **mobile-first**, optimized specifically for smartphone screens in physical waiting rooms, courthouse hallways, and emergency situations. When viewed on wide desktop monitors, the interface intentionally maintains a centered, focused mobile sanctuary container rather than stretching across wide viewports.
+> Charitas Clew is purpose-built to be **mobile-first**, optimized specifically for smartphone screens in physical waiting rooms, courthouse hallways, and emergency situations. When viewed on wide desktop monitors, the interface intentionally maintains a centered, focused mobile column rather than stretching across wide viewports.
 
 Whether a user pastes text or uploads a camera photo/PDF scan of any official letter:
 
@@ -57,7 +57,7 @@ Whether a user pastes text or uploads a camera photo/PDF scan of any official le
    - **🔊 Speech TTS**: 1-tap audio synthesis so users can listen to their speaking script while waiting in line.
 4. **1-Tap Emergency Assistance**:
    - Direct `tel:211` 1-tap dialing for immediate housing/utility crisis support, HUD counseling, and legal aid locator.
-5. **Sanctuary Persistence & Privacy**:
+5. **Session Persistence & Privacy**:
    - Automatic `localStorage` persistence (`✨ Restore Last Sanctuary Notice`) so phone screen locks or page reloads don't erase output.
 
 ---
@@ -79,7 +79,7 @@ Charitas Clew was conceived, architected, built, and deployed using a 100% Googl
 ```
 
 * **Google Gemini Chat Ideation**: Project ideation, problem formulation, persona design, legal advisement wording, and multimodal prompt engineering ([View Public Chat Session](https://gemini.google.com/app/b6b9f7e87d389357)).
-* **Google Gemini Flash (`@google/genai` SDK & `gemini-flash-latest`)**: Powers multimodal document OCR, structured JSON extraction, and sanctuary-toned translation.
+* **Google Gemini Flash (`@google/genai` SDK & `gemini-flash-latest`)**: Powers multimodal document OCR, structured JSON extraction, and plain-language translation in a calm register.
 * **Google Cloud Run**: Containerized Node.js Express backend (`Dockerfile`) deployed on port 8080.
 * **Google Firebase Hosting**: Ultra-fast static frontend delivery and global CDN (`charitas-clew.web.app`).
 
