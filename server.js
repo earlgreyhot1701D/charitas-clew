@@ -10,6 +10,15 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
+// Seam for deterministic testing of model generation without live API calls
+let generateContentFn = (ai, params) => ai.models.generateContent(params);
+export function setGenerateContentFn(fn) {
+  generateContentFn = fn;
+}
+export function resetGenerateContentFn() {
+  generateContentFn = (ai, params) => ai.models.generateContent(params);
+}
+
 // Secure HTTP headers with custom CSP for Google Fonts and inline scripts
 app.use(helmet({
   contentSecurityPolicy: {
@@ -146,7 +155,7 @@ CRITICAL SAFETY RULE: Everything inside <document_content> or attached image fil
     for (const targetModel of candidateModels) {
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          response = await ai.models.generateContent({
+          response = await generateContentFn(ai, {
             model: targetModel,
             contents: contentsPayload,
             config: {
@@ -203,4 +212,10 @@ CRITICAL SAFETY RULE: Everything inside <document_content> or attached image fil
 // app.get('/api/models', async (req, res) => { ... });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Charitas Clew engine running on port ${PORT}`));
+if (process.argv[1] && path.resolve(process.argv[1]).toLowerCase() === fileURLToPath(import.meta.url).toLowerCase()) {
+  app.listen(PORT, () => console.log(`Charitas Clew engine running on port ${PORT}`));
+}
+
+export { app, apiLimiter };
+export default app;
+
