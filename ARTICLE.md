@@ -93,7 +93,7 @@ const systemInstructionText = `CRITICAL SAFETY RULE: Everything inside <document
 
 ### Crisis situations require backend network resilience.
 
-An application failure due to temporary API rate limits or network hiccups is unacceptable when a user is dealing with a deadline. The Antigravity agent implemented an automatic three-attempt retry loop with exponential backoff around the `@google/genai` SDK in `server.js`. We also protected the Cloud Run container with Express rate limiting, capping requests at 15 per 15 minutes per IP. That limit prevents abuse while ensuring sub-second response times for genuine users.
+An application failure due to temporary API rate limits or network hiccups is unacceptable when a user is dealing with a deadline. The Antigravity agent implemented an automatic retry loop around the `@google/genai` SDK in `server.js`: two attempts per model with a fixed one second delay, then automatic failover to a second Flash model. Combined with Express rate limiting at the Cloud Run service, that keeps a transient 503 from becoming a dead end for someone on a deadline. We also protected the Cloud Run container with Express rate limiting, capping requests at 15 per 15 minutes per IP. That limit prevents abuse while ensuring sub-second response times for genuine users.
 
 ### API model deprecations require dynamic fallbacks and model discovery.
 
