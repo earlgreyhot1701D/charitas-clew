@@ -1306,7 +1306,7 @@ document.getElementById('btn-run').onclick = async () => {
     
   } catch (e) {
     console.error(e);
-    showError(e.message || "Network connection issue. Please check server or enter a valid API key.");
+    showError(e.message || "Google AI service is currently busy. Please try again in a moment.");
   } finally {
     btn.disabled = false;
     noticeInput.disabled = false;
@@ -1346,7 +1346,7 @@ CRITICAL SAFETY RULE: Output ONLY valid JSON matching fields: actualMeaning (str
     contentsParts.push({ inlineData: { mimeType: payload.mimeType || 'image/jpeg', data: base64Data } });
   }
 
-  const candidateModels = ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.7-flash'];
+  const candidateModels = ['gemini-flash-latest', 'gemini-3.5-flash-lite'];
   let lastErrMessage = "Gemini API request failed.";
 
   for (const modelName of candidateModels) {
