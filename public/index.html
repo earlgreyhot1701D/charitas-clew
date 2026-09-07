@@ -1232,6 +1232,33 @@ btnRestore.onclick = () => {
   } catch(e){}
 };
 
+function clearAllResults() {
+  noticeInput.value = '';
+  updateCharCount();
+  
+  selectedImageData = null;
+  selectedMimeType = null;
+  fileInput.value = '';
+  filePreview.style.display = 'none';
+  
+  document.getElementById('meaning-text').innerText = 'Paste or select a sample notice above to begin...';
+  const deadlineBox = document.getElementById('deadline-box');
+  deadlineBox.className = "stat-box";
+  document.getElementById('deadline-val').innerText = '--';
+  document.getElementById('deadline-context').innerText = 'Paste or select a sample notice above to begin...';
+  document.getElementById('action-steps-container').innerHTML = '<div style="color: var(--ink); opacity: 0.7;">Paste or select a sample notice above to begin...</div>';
+  document.getElementById('script-text').innerText = 'Paste or select a sample notice above to begin...';
+
+  try {
+    localStorage.removeItem('charitas_last_notice');
+    btnRestore.classList.remove('active');
+  } catch(e){}
+
+  hideError();
+}
+
+document.getElementById('btn-clear').onclick = clearAllResults;
+
 document.getElementById('btn-run').onclick = async () => {
   const text = noticeInput.value.trim();
   const targetLanguage = document.getElementById('lang-select').value;
