@@ -70,8 +70,8 @@ Whether a user pastes text or uploads a camera photo/PDF scan of any official le
    - **🔊 Speech TTS**: 1-tap audio synthesis so users can listen to their speaking script while waiting in line.
 4. **1-Tap Emergency Assistance**:
    - Direct `tel:211` 1-tap dialing for immediate housing/utility crisis support, HUD counseling, and legal aid locator.
-5. **Session Persistence & Privacy**:
-   - Automatic `localStorage` persistence (`✨ Restore Last Sanctuary Notice`) so phone screen locks or page reloads don't erase output.
+5. **Session Privacy & Ephemeral Processing**:
+   - Notice content is processed in memory for the active session and is not saved in persistent browser storage (`localStorage`), protecting users on shared or public devices. Harmless preferences (such as language choice) may remain on device.
 
 ---
 

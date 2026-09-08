@@ -901,6 +901,13 @@ textarea:disabled {
         Charitas Clew provides automated educational information and self-advocacy guidance only. It is not formal legal advice or legal representation. Please review all script text and verify document details with a qualified legal aid advocate or caseworker before taking formal action.
       </p>
     </div>
+
+    <div class="privacy-box" role="note" style="margin-top: 10px; background: rgba(0, 0, 0, 0.03); border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; padding: 10px 14px;">
+      <strong style="color: var(--brand-primary); font-size: 0.85rem;">🔒 Privacy & Data Retention:</strong>
+      <p style="font-size: 0.82rem; margin-top: 4px; line-height: 1.4; opacity: 0.9;">
+        Notice text and uploaded documents are processed in memory for the active request and transmitted via HTTPS to Google Cloud Run and the Google Gemini API for deconstruction. Notice content is not saved in browser persistent storage (localStorage) by Charitas Clew. Low-risk preferences such as language selection may remain saved on this device. Use the "Clear" button to wipe the current notice from this screen.
+      </p>
+    </div>
   </section>
 
   <section class="card about-card">
@@ -939,7 +946,22 @@ textarea:disabled {
 </div>
 
 <script type="module">
-import { renderActionSteps, classifyFrontendError, isCalendarSunset } from './ui-helpers.js';
+import { renderActionSteps, classifyFrontendError, isCalendarSunset, setSafePreference, getSafePreference, purgeSensitiveStorage } from './ui-helpers.js';
+
+// Purge any stale legacy notice data from past sessions
+purgeSensitiveStorage();
+
+// Restore allowlisted language preference if previously saved
+const langSelect = document.getElementById('lang-select');
+const savedLang = getSafePreference('charitas_pref_lang');
+if (savedLang && langSelect && Array.from(langSelect.options).some(o => o.value === savedLang)) {
+  langSelect.value = savedLang;
+}
+if (langSelect) {
+  langSelect.addEventListener('change', (e) => {
+    setSafePreference('charitas_pref_lang', e.target.value);
+  });
+}
 
 // Sample Presets Data
 const PRESETS = {
@@ -1209,29 +1231,6 @@ function renderNoticeResults(data) {
   }
 }
 
-// Local Storage Restoration Logic
-const btnRestore = document.getElementById('btn-restore');
-function checkSavedNotice() {
-  try {
-    const saved = localStorage.getItem('charitas_last_notice');
-    if (saved) {
-      btnRestore.classList.add('active');
-    }
-  } catch(e){}
-}
-checkSavedNotice();
-
-btnRestore.onclick = () => {
-  try {
-    const saved = localStorage.getItem('charitas_last_notice');
-    if (saved) {
-      const data = JSON.parse(saved);
-      renderNoticeResults(data);
-      btnRestore.classList.remove('active');
-    }
-  } catch(e){}
-};
-
 function clearAllResults() {
   noticeInput.value = '';
   updateCharCount();
@@ -1239,7 +1238,8 @@ function clearAllResults() {
   selectedImageData = null;
   selectedMimeType = null;
   fileInput.value = '';
-  filePreview.style.display = 'none';
+  filePreview.classList.remove('active');
+  fileThumb.src = '';
   
   document.getElementById('meaning-text').innerText = 'Paste or select a sample notice above to begin...';
   const deadlineBox = document.getElementById('deadline-box');
@@ -1249,11 +1249,14 @@ function clearAllResults() {
   document.getElementById('action-steps-container').innerHTML = '<div style="color: var(--ink); opacity: 0.7;">Paste or select a sample notice above to begin...</div>';
   document.getElementById('script-text').innerText = 'Paste or select a sample notice above to begin...';
 
-  try {
-    localStorage.removeItem('charitas_last_notice');
-    btnRestore.classList.remove('active');
-  } catch(e){}
+  if (typeof window !== 'undefined' && window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+    synthSpeaking = false;
+    const btnSpeech = document.getElementById('btn-speech');
+    if (btnSpeech) btnSpeech.innerText = "🔊 Listen";
+  }
 
+  purgeSensitiveStorage();
   hideError();
 }
 
@@ -1310,10 +1313,6 @@ document.getElementById('btn-run').onclick = async () => {
     if (response.ok) {
       const data = await response.json();
       renderNoticeResults(data);
-      try {
-        localStorage.setItem('charitas_last_notice', JSON.stringify(data));
-        btnRestore.classList.remove('active');
-      } catch(e){}
     } else {
       const errData = await response.json().catch(() => ({}));
       const err = classifyFrontendError({ status: response.status, errMessage: errData.error });

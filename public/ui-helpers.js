@@ -84,3 +84,57 @@ export function renderActionSteps(container, actionSteps) {
     container.appendChild(item);
   });
 }
+
+/**
+ * Explicit allowlist of permissible localStorage keys.
+ * Notice content and generated output must NEVER be stored in persistent storage.
+ */
+export const ALLOWED_STORAGE_KEYS = new Set(['charitas_pref_lang']);
+
+/**
+ * Safely writes an allowlisted preference to persistent storage.
+ * Rejects non-allowlisted keys or sensitive notice content.
+ * @param {string} key
+ * @param {string} value
+ * @param {Storage|Object} [storage=localStorage]
+ * @returns {boolean} True if written successfully
+ */
+export function setSafePreference(key, value, storage = (typeof localStorage !== 'undefined' ? localStorage : null)) {
+  if (!storage || !ALLOWED_STORAGE_KEYS.has(key)) return false;
+  try {
+    storage.setItem(key, String(value));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Safely reads an allowlisted preference from persistent storage.
+ * @param {string} key
+ * @param {Storage|Object} [storage=localStorage]
+ * @returns {string|null}
+ */
+export function getSafePreference(key, storage = (typeof localStorage !== 'undefined' ? localStorage : null)) {
+  if (!storage || !ALLOWED_STORAGE_KEYS.has(key)) return null;
+  try {
+    return storage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Purges legacy or sensitive keys from localStorage to prevent persistence leaks.
+ * @param {Storage|Object} [storage=localStorage]
+ */
+export function purgeSensitiveStorage(storage = (typeof localStorage !== 'undefined' ? localStorage : null)) {
+  if (!storage) return;
+  const legacyKeys = ['charitas_last_notice'];
+  legacyKeys.forEach(k => {
+    try {
+      storage.removeItem(k);
+    } catch {}
+  });
+}
+
