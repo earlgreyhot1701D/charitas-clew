@@ -127,48 +127,129 @@ describe('Deployment & Production Hardening Suite (Phase 5)', () => {
       assert.match(res.headers['content-security-policy'], /frame-ancestors 'none'/);
     });
 
-    test('trust proxy: 1 prevents spoofing: client prepended IP in X-Forwarded-For is ignored in favor of trusted hop', async () => {
+    test('Firebase-style two-hop forwarded chain resolves to real client and enforces quota', async () => {
       setGenerateContentFn(async () => ({ text: JSON.stringify(dummyMockSuccessResponse) }));
 
-      const trustedHopIp = '198.51.100.50';
-      const spoofedIp = '203.0.113.99';
+      const realClientIp = '203.0.113.80';
+      const firebaseProxyIp = '66.249.84.37'; // authentic Google Front End IP
 
-      // Attacker sends: X-Forwarded-For: <spoofedIp>, <trustedHopIp>
-      // With trust proxy: 1, Express inspects 1 hop back from socket -> selects trustedHopIp
       for (let i = 0; i < 15; i++) {
         const res = await request(app)
           .post('/api/deconstruct')
-          .set('X-Forwarded-For', `${spoofedIp}, ${trustedHopIp}`)
+          .set('X-Forwarded-For', `${realClientIp}, ${firebaseProxyIp}`)
           .send({ text: 'Notice text' });
         assert.equal(res.status, 200);
       }
 
-      // 16th request using a DIFFERENT spoofed prefix but SAME trusted hop MUST be rate-limited
+      // 16th request is rate-limited on the real client IP
       const blockedRes = await request(app)
         .post('/api/deconstruct')
-        .set('X-Forwarded-For', `1.1.1.1, ${trustedHopIp}`)
+        .set('X-Forwarded-For', `${realClientIp}, ${firebaseProxyIp}`)
         .send({ text: 'Notice text' });
 
       assert.equal(blockedRes.status, 429);
       assert.match(blockedRes.body.error, /Rate limit exceeded/);
 
-      // Clean up rate limiter key
       if (apiLimiter && typeof apiLimiter.resetKey === 'function') {
-        apiLimiter.resetKey(trustedHopIp);
+        apiLimiter.resetKey(realClientIp);
       }
     });
 
-    test('distinct client IPs maintain independent rate-limit quotas', async () => {
+    test('direct Cloud Run-style chain resolves to real direct caller and enforces quota', async () => {
       setGenerateContentFn(async () => ({ text: JSON.stringify(dummyMockSuccessResponse) }));
 
-      const clientA = '198.51.100.10';
-      const clientB = '198.51.100.20';
+      const directClientIp = '198.51.100.80';
 
-      // Send 15 requests from client A
       for (let i = 0; i < 15; i++) {
         const res = await request(app)
           .post('/api/deconstruct')
-          .set('X-Forwarded-For', clientA)
+          .set('X-Forwarded-For', directClientIp)
+          .send({ text: 'Notice text' });
+        assert.equal(res.status, 200);
+      }
+
+      const blockedRes = await request(app)
+        .post('/api/deconstruct')
+        .set('X-Forwarded-For', directClientIp)
+        .send({ text: 'Notice text' });
+
+      assert.equal(blockedRes.status, 429);
+      assert.match(blockedRes.body.error, /Rate limit exceeded/);
+
+      if (apiLimiter && typeof apiLimiter.resetKey === 'function') {
+        apiLimiter.resetKey(directClientIp);
+      }
+    });
+
+    test('attacker-prepended spoofed X-Forwarded-For behind Firebase does NOT control identity', async () => {
+      setGenerateContentFn(async () => ({ text: JSON.stringify(dummyMockSuccessResponse) }));
+
+      const attackerRealIp = '203.0.113.99';
+      const firebaseProxyIp = '66.249.84.106';
+
+      // Attacker attempts to rotate spoofed IP prefix on every request
+      for (let i = 0; i < 15; i++) {
+        const spoofedPrefix = `10.0.0.${i + 1}`;
+        const res = await request(app)
+          .post('/api/deconstruct')
+          .set('X-Forwarded-For', `${spoofedPrefix}, ${attackerRealIp}, ${firebaseProxyIp}`)
+          .send({ text: 'Notice text' });
+        assert.equal(res.status, 200);
+      }
+
+      // 16th request with yet another spoofed IP MUST be blocked because identity is pinned to attackerRealIp
+      const blockedRes = await request(app)
+        .post('/api/deconstruct')
+        .set('X-Forwarded-For', `1.2.3.4, ${attackerRealIp}, ${firebaseProxyIp}`)
+        .send({ text: 'Notice text' });
+
+      assert.equal(blockedRes.status, 429);
+      assert.match(blockedRes.body.error, /Rate limit exceeded/);
+
+      if (apiLimiter && typeof apiLimiter.resetKey === 'function') {
+        apiLimiter.resetKey(attackerRealIp);
+      }
+    });
+
+    test('attacker-prepended spoofed X-Forwarded-For direct to Cloud Run does NOT control identity', async () => {
+      setGenerateContentFn(async () => ({ text: JSON.stringify(dummyMockSuccessResponse) }));
+
+      const attackerDirectIp = '198.51.100.99';
+
+      for (let i = 0; i < 15; i++) {
+        const spoofedPrefix = `172.16.0.${i + 1}`;
+        const res = await request(app)
+          .post('/api/deconstruct')
+          .set('X-Forwarded-For', `${spoofedPrefix}, ${attackerDirectIp}`)
+          .send({ text: 'Notice text' });
+        assert.equal(res.status, 200);
+      }
+
+      const blockedRes = await request(app)
+        .post('/api/deconstruct')
+        .set('X-Forwarded-For', `8.8.8.8, ${attackerDirectIp}`)
+        .send({ text: 'Notice text' });
+
+      assert.equal(blockedRes.status, 429);
+      assert.match(blockedRes.body.error, /Rate limit exceeded/);
+
+      if (apiLimiter && typeof apiLimiter.resetKey === 'function') {
+        apiLimiter.resetKey(attackerDirectIp);
+      }
+    });
+
+    test('two distinct clients behind Firebase maintain independent rate-limit quotas', async () => {
+      setGenerateContentFn(async () => ({ text: JSON.stringify(dummyMockSuccessResponse) }));
+
+      const clientA = '203.0.113.10';
+      const clientB = '203.0.113.20';
+      const sharedProxy = '74.125.209.3'; // Both pass through same Firebase proxy
+
+      // Exhaust client A's quota
+      for (let i = 0; i < 15; i++) {
+        const res = await request(app)
+          .post('/api/deconstruct')
+          .set('X-Forwarded-For', `${clientA}, ${sharedProxy}`)
           .send({ text: 'Notice text' });
         assert.equal(res.status, 200);
       }
@@ -176,21 +257,88 @@ describe('Deployment & Production Hardening Suite (Phase 5)', () => {
       // Client A is blocked on 16th
       const blockedA = await request(app)
         .post('/api/deconstruct')
-        .set('X-Forwarded-For', clientA)
+        .set('X-Forwarded-For', `${clientA}, ${sharedProxy}`)
         .send({ text: 'Notice text' });
       assert.equal(blockedA.status, 429);
 
-      // Client B is NOT blocked
+      // Client B through the SAME proxy is NOT blocked
       const allowedB = await request(app)
         .post('/api/deconstruct')
-        .set('X-Forwarded-For', clientB)
+        .set('X-Forwarded-For', `${clientB}, ${sharedProxy}`)
         .send({ text: 'Notice text' });
       assert.equal(allowedB.status, 200);
 
-      // Clean up
       if (apiLimiter && typeof apiLimiter.resetKey === 'function') {
         apiLimiter.resetKey(clientA);
         apiLimiter.resetKey(clientB);
+      }
+    });
+
+    test('repeated requests from one client across different Firebase proxy nodes share a cohesive quota', async () => {
+      setGenerateContentFn(async () => ({ text: JSON.stringify(dummyMockSuccessResponse) }));
+
+      const clientA = '203.0.113.30';
+      const proxyNode1 = '66.249.84.106';
+      const proxyNode2 = '74.125.209.161';
+      const proxyNode3 = '66.249.84.228';
+
+      // 5 requests via proxyNode1
+      for (let i = 0; i < 5; i++) {
+        const res = await request(app)
+          .post('/api/deconstruct')
+          .set('X-Forwarded-For', `${clientA}, ${proxyNode1}`)
+          .send({ text: 'Notice text' });
+        assert.equal(res.status, 200);
+      }
+
+      // 5 requests via proxyNode2
+      for (let i = 0; i < 5; i++) {
+        const res = await request(app)
+          .post('/api/deconstruct')
+          .set('X-Forwarded-For', `${clientA}, ${proxyNode2}`)
+          .send({ text: 'Notice text' });
+        assert.equal(res.status, 200);
+      }
+
+      // 5 requests via proxyNode3 (reaching 15 total)
+      for (let i = 0; i < 5; i++) {
+        const res = await request(app)
+          .post('/api/deconstruct')
+          .set('X-Forwarded-For', `${clientA}, ${proxyNode3}`)
+          .send({ text: 'Notice text' });
+        assert.equal(res.status, 200);
+      }
+
+      // 16th request via proxyNode1 MUST be blocked (proves quota is NOT fragmented across proxies)
+      const blockedRes = await request(app)
+        .post('/api/deconstruct')
+        .set('X-Forwarded-For', `${clientA}, ${proxyNode1}`)
+        .send({ text: 'Notice text' });
+
+      assert.equal(blockedRes.status, 429);
+      assert.match(blockedRes.body.error, /Rate limit exceeded/);
+
+      if (apiLimiter && typeof apiLimiter.resetKey === 'function') {
+        apiLimiter.resetKey(clientA);
+      }
+    });
+
+    test('malformed or extraneous forwarded addresses preserve the true client identity', async () => {
+      setGenerateContentFn(async () => ({ text: JSON.stringify(dummyMockSuccessResponse) }));
+
+      const clientIp = '203.0.113.45';
+      const googleProxy = '66.249.84.37';
+
+      // Header with garbage leading entries
+      const res = await request(app)
+        .post('/api/deconstruct')
+        .set('X-Forwarded-For', `unknown, , 1.2.3.4, ${clientIp}, ${googleProxy}`)
+        .send({ text: 'Notice text' });
+      assert.equal(res.status, 200);
+
+      // Verify rate limiter decremented clientIp's quota, not garbage/proxy
+      if (apiLimiter && typeof apiLimiter.resetKey === 'function') {
+        apiLimiter.resetKey(clientIp);
       }
     });
   });

@@ -8,6 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { validateLanguage, validateUpload } from './validators.js';
 import { validateModelResponse, isRetryableGeminiError, withTimeout } from './response-validator.js';
+import { createTrustProxyFn } from './proxy-trust.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -42,10 +43,13 @@ app.use(helmet({
 app.use(morgan('tiny'));
 app.use(express.json({ limit: '10mb' })); // Payload limit for image uploads
 app.use(express.static(path.join(__dirname, 'public')));
-// Note: trust proxy 1 trusts the immediate Cloud Run GFE proxy to prevent spoofed X-Forwarded-For bypass
-app.set('trust proxy', 1);
+// Deliberate trust proxy configuration:
+// Trust container local socket (hop 0) and recognized Google Front End / Firebase Hosting proxies (hop 1).
+// Hop >= 2 is never trusted, anchoring client identity to the true caller and preventing spoofed X-Forwarded-For bypass.
+app.set('trust proxy', createTrustProxyFn());
 
 // Rate limiter for API endpoint (15 requests per 15 mins per IP)
+// Note: Rate limiting is best-effort per container instance, not a globally synchronized quota.
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 15,
