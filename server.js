@@ -148,12 +148,12 @@ FIELD SPECIFICATIONS:
 2. hasDeadline: true if an explicit deadline, response date, or scheduled event date is stated in the document text; false if no explicit date was identified. Do not infer statutory deadlines not mentioned in the text.
 3. deadlineDate: Specific date string identified in the document (e.g. "September 18, 2026") or null if none identified. Do not claim statutory certainty.
 4. deadlineContext: Short explanation of what the document states will happen on or by that date, or note that procedural deadlines may depend on service date.
-5. actionSteps: Array of 2-3 actionable, reassuring suggested next steps.
+5. actionSteps: Array of 2-3 actionable, reassuring suggested next steps. Each step must have a short, concise title (under 10 words) and an actionable description explaining what to do.
 6. advocateScript: FIRST-PERSON SCRIPT FOR THE USER TO SPEAK OUT LOUD. This MUST be written strictly in FIRST PERSON ("Hello, my name is [Name] and I am a resident at [Address]. I am calling regarding the notice to...") for the USER to read out loud when calling or visiting the property manager, contractor, clerk, or caseworker. NEVER write advice addressed to the user (e.g. do NOT write "Don't worry, take a deep breath"). Write ONLY the exact words the user should speak to the entity on the phone or in person.`;
 
     const candidateModels = ['gemini-flash-latest', 'gemini-3.5-flash-lite'];
-    // Overall request timeout budget (30s) to guarantee response completes before Firebase Hosting 60s rewrite timeout
-    const requestDeadline = Date.now() + 30000;
+    // Overall request timeout budget (25s) to guarantee response completes before Firebase Hosting 60s rewrite timeout
+    const requestDeadline = Date.now() + 25000;
 
     for (const targetModel of candidateModels) {
       let shouldStopAllAttempts = false;
@@ -163,7 +163,7 @@ FIELD SPECIFICATIONS:
           shouldStopAllAttempts = true;
           break;
         }
-        const attemptTimeout = Math.min(15000, remainingBudget);
+        const attemptTimeout = Math.min(10000, remainingBudget);
 
         try {
           response = await withTimeout(
@@ -188,7 +188,8 @@ FIELD SPECIFICATIONS:
                         properties: {
                           title: { type: "STRING" },
                           description: { type: "STRING" }
-                        }
+                        },
+                        required: ["title", "description"]
                       }
                     },
                     advocateScript: { type: "STRING" }
