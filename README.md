@@ -18,7 +18,7 @@
 > [`hackathon-submission-2026-09-06`](https://github.com/earlgreyhot1701D/charitas-clew/releases/tag/hackathon-submission-2026-09-06).
 >
 > Commits and improvements made after that tag represent post-submission production hardening, reliability, security, testing, accessibility, and resilience enhancements. They are not represented as work completed during the initial challenge window, but rather ongoing software craftsmanship to guarantee zero-downtime reliability during judging and real-world public use:
-> - **Gemini Fallback & Timeout Tuning**: Migrated primary and fallback models to `gemini-2.5-flash` and `gemini-2.5-flash-lite`. Expanded attempt timeout to 24s within a 45s provider budget (comfortably below Firebase Hosting's 60s gateway cutoff).
+> - **Gemini Fallback & Timeout Tuning**: migrated primary and fallback models to `gemini-3.6-flash` and `gemini-flash-lite`. Expanded attempt timeout to 24s within a 45s provider budget (comfortably below Firebase Hosting's 60s gateway cutoff).
 > - **Permissive Runtime Response Sanitization**: Relaxed strict JSON validation to safely strip benign extra fields, discard control characters, and clamp oversized strings/arrays. If Gemini flags a deadline without a specific date or context, safe neutral context text is provided instead of returning a 502 error.
 > - **ISO Language Code Normalization**: Supported ISO codes (`en`, `es`, `vi`, `zh`, `ar`, `fr`) and uppercase variants alongside display names.
 > - **One-Tap Preset Deconstruction**: Selecting any sample notice immediately clears stale data and triggers instant deconstruction with visual loading states.
@@ -92,11 +92,11 @@ Charitas Clew was conceived, architected, built, and deployed using a 100% Googl
                                                    │
                                            [ Google Cloud Run ]
                                                    │
-                                      [ Google Gemini Flash API (`gemini-2.5-flash`) ]
+                                      [ Google Gemini Flash API (`gemini-3.6-flash`) ]
 ```
 
 * **Google Gemini Chat Ideation**: Project ideation, problem formulation, persona design, legal advisement wording, and multimodal prompt engineering ([View Public Chat Session](https://gemini.google.com/app/b6b9f7e87d389357)).
-* **Google Gemini Flash (`@google/genai` SDK & `gemini-2.5-flash`)**: Powers multimodal document OCR, structured JSON extraction, and plain-language translation in a calm register with fallback to `gemini-2.5-flash-lite`.
+* **Google Gemini Flash (`@google/genai` SDK & `gemini-3.6-flash`)**: Powers multimodal document OCR, structured JSON extraction, and plain-language translation in a calm register with fallback to `gemini-2.5-flash-lite`.
 * **Google Cloud Run**: Containerized Node.js Express backend (`Dockerfile`) deployed on port 8080.
 * **Google Firebase Hosting**: Ultra-fast static frontend delivery and global CDN (`charitas-clew.web.app`).
 
@@ -105,7 +105,7 @@ Charitas Clew was conceived, architected, built, and deployed using a 100% Googl
 ## 🛡️ Security & Resilience Hardening
 
 - **Untrusted Document Isolation**: Document contents are treated as untrusted data and isolated from application-controlled instructions within `<untrusted_document>` delimiters. Model output is constrained by schema and validated at runtime before display.
-- **Backend Model Failover & Timeouts**: Server executes up to 2 attempts per model with a fixed 1000ms backoff across candidate Flash models (`gemini-2.5-flash` and `gemini-2.5-flash-lite`). Each attempt receives up to 24s within a 45s overall provider budget, safely below Firebase Hosting's 60s gateway limit.
+- **Backend Model Failover & Timeouts**: Server executes up to 2 attempts per model with a fixed 1000ms backoff across candidate Flash models (`gemini-3.6-flash` and `gemini-flash-lite`). Each attempt receives up to 24s within a 45s overall provider budget, safely below Firebase Hosting's 60s gateway limit.
 - **Resilient Response Validation**: Structured JSON schema output is sanitized at runtime: unknown fields are safely discarded, control characters are removed, and text fields/action steps are clamped rather than rejecting successful model inferences. If Gemini flags a deadline without a calendar date or context, safe neutral context text is provided instead of returning an unnecessary 502 error.
 - **Transient vs Permanent Failure Handling**: Transient provider issues (HTTP 429 rate limits, 503 unavailability, network timeouts) trigger automatic retries. Permanent client/auth/safety errors fail immediately without retry. The client UI distinguishes transient retryable network/server issues from the scheduled permanent calendar sunset (`2027-01-01`).
 - **Payload & Rate Limiting**: Express body parser capped at 10MB. Rate limiting of 15 requests per 15 minutes per IP is enforced at the Cloud Run service behind trusted Google proxy hops.

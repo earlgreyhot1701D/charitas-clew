@@ -139,7 +139,7 @@ describe('Charitas Clew API Regression Test Suite', () => {
 
     // Verify model and prompt received by mock
     assert.ok(capturedCall);
-    assert.equal(capturedCall.model, 'gemini-2.5-flash');
+    assert.equal(capturedCall.model, 'gemini-3.6-flash');
     assert.match(capturedCall.contents, /Final Notice: Electric service disconnect/);
   });
 

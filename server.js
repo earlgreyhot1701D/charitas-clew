@@ -151,7 +151,7 @@ FIELD SPECIFICATIONS:
 5. actionSteps: Array of 2-3 actionable, reassuring suggested next steps. Each step must have a short, concise title (under 10 words) and an actionable description explaining what to do.
 6. advocateScript: FIRST-PERSON SCRIPT FOR THE USER TO SPEAK OUT LOUD. This MUST be written strictly in FIRST PERSON ("Hello, my name is [Name] and I am a resident at [Address]. I am calling regarding the notice to...") for the USER to read out loud when calling or visiting the property manager, contractor, clerk, or caseworker. NEVER write advice addressed to the user (e.g. do NOT write "Don't worry, take a deep breath"). Write ONLY the exact words the user should speak to the entity on the phone or in person.`;
 
-    const candidateModels = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+    const candidateModels = ['gemini-3.6-flash', 'gemini-flash-lite'];
     // Overall request timeout budget (45s) to guarantee response completes before Firebase Hosting 60s rewrite timeout
     const requestDeadline = Date.now() + 45000;
 
