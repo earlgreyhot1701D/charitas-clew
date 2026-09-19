@@ -1,22 +1,25 @@
 /**
  * Charitas Clew - Response Validator & Resilience Helpers
- * Validates untrusted Gemini output and classifies model error retryability.
+ * Validates untrusted Gemini output, sanitizes resiliently, and classifies model error retryability.
  */
 
-const ALLOWED_TOP_LEVEL_KEYS = [
-  'actualMeaning',
-  'hasDeadline',
-  'deadlineDate',
-  'deadlineContext',
-  'actionSteps',
-  'advocateScript'
-];
+export const DEFAULT_DEADLINE_FALLBACK = 'See notice text for response instructions and timeframes.';
 
-const ALLOWED_STEP_KEYS = ['title', 'description'];
+/**
+ * Strips ASCII control characters except newline (\n), carriage return (\r), and tab (\t).
+ * @param {string} str
+ * @returns {string}
+ */
+function stripControlChars(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+}
 
 /**
  * Validates the parsed Gemini response against the required structural and semantic contract.
- * Rejects unexpected extra properties, invalid types, oversized values, and deadline inconsistencies.
+ * Unknown fields are discarded, control characters are removed, strings and arrays are clamped,
+ * malformed action steps are skipped, and safe deadline fallback text is provided when needed.
+ * Required semantic fields fail closed.
  * @param {*} parsed
  * @returns {{ valid: boolean, data?: object, error?: string }}
  */
@@ -25,23 +28,17 @@ export function validateModelResponse(parsed) {
     return { valid: false, error: 'Model response must be a plain object.' };
   }
 
-  // Policy: Reject unexpected extra properties to prevent hallucinated/injected fields
-  const extraKeys = Object.keys(parsed).filter(k => !ALLOWED_TOP_LEVEL_KEYS.includes(k));
-  if (extraKeys.length > 0) {
-    return { valid: false, error: `Unexpected extra properties in model response: ${extraKeys.join(', ')}` };
-  }
-
-  // 1. actualMeaning
+  // 1. actualMeaning (required semantic field)
   if (typeof parsed.actualMeaning !== 'string') {
     return { valid: false, error: 'actualMeaning must be a string.' };
   }
-  const actualMeaning = parsed.actualMeaning.trim();
-  if (actualMeaning.length === 0) {
+  const cleanActualMeaning = stripControlChars(parsed.actualMeaning).trim();
+  if (cleanActualMeaning.length === 0) {
     return { valid: false, error: 'actualMeaning cannot be empty.' };
   }
-  if (actualMeaning.length > 5000) {
-    return { valid: false, error: 'actualMeaning exceeds maximum allowed length of 5,000 characters.' };
-  }
+  const actualMeaning = cleanActualMeaning.length > 5000
+    ? cleanActualMeaning.slice(0, 5000)
+    : cleanActualMeaning;
 
   // 2. hasDeadline (strict boolean check: no string coercion)
   if (typeof parsed.hasDeadline !== 'boolean') {
@@ -52,88 +49,80 @@ export function validateModelResponse(parsed) {
   // 3. deadlineDate (optional/nullable string)
   let deadlineDate = null;
   if (parsed.deadlineDate !== undefined && parsed.deadlineDate !== null) {
-    if (typeof parsed.deadlineDate !== 'string') {
-      return { valid: false, error: 'deadlineDate must be a string when provided.' };
+    if (typeof parsed.deadlineDate === 'string') {
+      const cleanDate = stripControlChars(parsed.deadlineDate).trim();
+      if (cleanDate.length > 0) {
+        deadlineDate = cleanDate.length > 200 ? cleanDate.slice(0, 200) : cleanDate;
+      }
     }
-    if (parsed.deadlineDate.length > 200) {
-      return { valid: false, error: 'deadlineDate exceeds maximum length of 200 characters.' };
-    }
-    deadlineDate = parsed.deadlineDate.trim();
   }
 
   // 4. deadlineContext (optional/nullable string)
   let deadlineContext = null;
   if (parsed.deadlineContext !== undefined && parsed.deadlineContext !== null) {
-    if (typeof parsed.deadlineContext !== 'string') {
-      return { valid: false, error: 'deadlineContext must be a string when provided.' };
-    }
-    if (parsed.deadlineContext.length > 1000) {
-      return { valid: false, error: 'deadlineContext exceeds maximum length of 1,000 characters.' };
-    }
-    deadlineContext = parsed.deadlineContext.trim();
-  }
-
-  // Deadline consistency check:
-  // If hasDeadline is true, require at least deadlineDate or deadlineContext to avoid empty deadline state
-  if (hasDeadline) {
-    const hasValidDate = deadlineDate && deadlineDate.length > 0;
-    const hasValidContext = deadlineContext && deadlineContext.length > 0;
-    if (!hasValidDate && !hasValidContext) {
-      return { valid: false, error: 'hasDeadline is true but neither deadlineDate nor deadlineContext was provided.' };
+    if (typeof parsed.deadlineContext === 'string') {
+      const cleanCtx = stripControlChars(parsed.deadlineContext).trim();
+      if (cleanCtx.length > 1000) {
+        deadlineContext = cleanCtx.length > 1000 ? cleanCtx.slice(0, 1000) : cleanCtx;
+      } else if (cleanCtx.length > 0) {
+        deadlineContext = cleanCtx;
+      }
     }
   }
 
-  // 5. actionSteps
+  // Safe deadline fallback: If deadline is flagged but neither date nor context was provided,
+  // supply neutral fallback text instead of failing with a 502 error
+  if (hasDeadline && !deadlineDate && !deadlineContext) {
+    deadlineContext = DEFAULT_DEADLINE_FALLBACK;
+  }
+
+  // 5. actionSteps (required semantic field)
   if (!Array.isArray(parsed.actionSteps)) {
     return { valid: false, error: 'actionSteps must be an array.' };
   }
-  if (parsed.actionSteps.length < 1 || parsed.actionSteps.length > 5) {
+  if (parsed.actionSteps.length === 0) {
     return { valid: false, error: 'actionSteps must contain between 1 and 5 items.' };
   }
 
   const sanitizedSteps = [];
-  for (let i = 0; i < parsed.actionSteps.length; i++) {
-    const step = parsed.actionSteps[i];
+  const rawSteps = parsed.actionSteps.slice(0, 5); // Clamp to at most 5 items
+  for (let i = 0; i < rawSteps.length; i++) {
+    const step = rawSteps[i];
     if (typeof step !== 'object' || step === null || Array.isArray(step)) {
-      return { valid: false, error: `actionSteps[${i}] must be an object.` };
+      continue; // Skip malformed non-object steps
     }
 
-    const stepExtraKeys = Object.keys(step).filter(k => !ALLOWED_STEP_KEYS.includes(k));
-    if (stepExtraKeys.length > 0) {
-      return { valid: false, error: `actionSteps[${i}] has unexpected properties: ${stepExtraKeys.join(', ')}` };
+    if (typeof step.title !== 'string' || typeof step.description !== 'string') {
+      continue; // Skip malformed steps missing title or description
     }
 
-    if (typeof step.title !== 'string' || step.title.trim().length === 0) {
-      return { valid: false, error: `actionSteps[${i}].title must be a non-empty string.` };
-    }
-    if (step.title.length > 200) {
-      return { valid: false, error: `actionSteps[${i}].title exceeds maximum length of 200 characters.` };
-    }
-
-    if (typeof step.description !== 'string' || step.description.trim().length === 0) {
-      return { valid: false, error: `actionSteps[${i}].description must be a non-empty string.` };
-    }
-    if (step.description.length > 1000) {
-      return { valid: false, error: `actionSteps[${i}].description exceeds maximum length of 1,000 characters.` };
+    const cleanTitle = stripControlChars(step.title).trim();
+    const cleanDesc = stripControlChars(step.description).trim();
+    if (cleanTitle.length === 0 || cleanDesc.length === 0) {
+      continue; // Skip steps with empty content
     }
 
     sanitizedSteps.push({
-      title: step.title.trim(),
-      description: step.description.trim()
+      title: cleanTitle.length > 200 ? cleanTitle.slice(0, 200) : cleanTitle,
+      description: cleanDesc.length > 1000 ? cleanDesc.slice(0, 1000) : cleanDesc
     });
   }
 
-  // 6. advocateScript
+  if (sanitizedSteps.length === 0) {
+    return { valid: false, error: 'actionSteps must contain at least one usable action step.' };
+  }
+
+  // 6. advocateScript (required semantic field)
   if (typeof parsed.advocateScript !== 'string') {
     return { valid: false, error: 'advocateScript must be a string.' };
   }
-  const advocateScript = parsed.advocateScript.trim();
-  if (advocateScript.length === 0) {
+  const cleanScript = stripControlChars(parsed.advocateScript).trim();
+  if (cleanScript.length === 0) {
     return { valid: false, error: 'advocateScript cannot be empty.' };
   }
-  if (advocateScript.length > 5000) {
-    return { valid: false, error: 'advocateScript exceeds maximum allowed length of 5,000 characters.' };
-  }
+  const advocateScript = cleanScript.length > 5000
+    ? cleanScript.slice(0, 5000)
+    : cleanScript;
 
   return {
     valid: true,

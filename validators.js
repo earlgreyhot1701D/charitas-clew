@@ -12,6 +12,17 @@ export const ALLOWED_LANGUAGES = [
   'Français (French)'
 ];
 
+// Normalize compact API-friendly language codes to the same display names used
+// by the UI and in the model prompt. Keep this list deliberately closed.
+export const LANGUAGE_CODE_MAP = Object.freeze({
+  en: 'English',
+  es: 'Español (Spanish)',
+  vi: 'Tiếng Việt (Vietnamese)',
+  zh: '中文 (Chinese)',
+  ar: 'العربية (Arabic)',
+  fr: 'Français (French)'
+});
+
 export const ALLOWED_MIMES = [
   'image/jpeg',
   'image/png',
@@ -42,11 +53,12 @@ export function validateLanguage(targetLanguage) {
     return { valid: true, language: 'English' };
   }
 
-  if (!ALLOWED_LANGUAGES.includes(trimmed)) {
+  const normalizedLanguage = LANGUAGE_CODE_MAP[trimmed.toLowerCase()] || trimmed;
+  if (!ALLOWED_LANGUAGES.includes(normalizedLanguage)) {
     return { valid: false, error: 'Unsupported target language.' };
   }
 
-  return { valid: true, language: trimmed };
+  return { valid: true, language: normalizedLanguage };
 }
 
 /**

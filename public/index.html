@@ -1112,8 +1112,10 @@ document.querySelectorAll('.preset-chip').forEach(chip => {
   chip.onclick = () => {
     const key = chip.getAttribute('data-preset');
     if (PRESETS[key]) {
+      clearAllResults();
       noticeInput.value = PRESETS[key];
       updateCharCount();
+      document.getElementById('btn-run').click();
     }
   };
 });

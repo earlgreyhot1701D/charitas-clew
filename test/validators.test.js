@@ -28,12 +28,23 @@ describe('Input Validators Unit Suite', () => {
   });
 
   test('validateLanguage rejects unsupported string languages', () => {
-    const invalidLangs = ['Klingon', 'Pig Latin', 'English; DROP TABLE', 'es', 'zh', 'Russian'];
+    const invalidLangs = ['Klingon', 'Pig Latin', 'English; DROP TABLE', 'de', 'jp', 'Russian'];
     for (const lang of invalidLangs) {
       const res = validateLanguage(lang);
       assert.equal(res.valid, false);
       assert.equal(res.error, 'Unsupported target language.');
     }
+  });
+
+  test('validateLanguage normalizes ISO codes and case variants to display names', () => {
+    assert.deepEqual(validateLanguage('en'), { valid: true, language: 'English' });
+    assert.deepEqual(validateLanguage('EN'), { valid: true, language: 'English' });
+    assert.deepEqual(validateLanguage('es'), { valid: true, language: 'Español (Spanish)' });
+    assert.deepEqual(validateLanguage('ES'), { valid: true, language: 'Español (Spanish)' });
+    assert.deepEqual(validateLanguage('vi'), { valid: true, language: 'Tiếng Việt (Vietnamese)' });
+    assert.deepEqual(validateLanguage('zh'), { valid: true, language: '中文 (Chinese)' });
+    assert.deepEqual(validateLanguage('ar'), { valid: true, language: 'العربية (Arabic)' });
+    assert.deepEqual(validateLanguage('fr'), { valid: true, language: 'Français (French)' });
   });
 
   test('validateLanguage rejects non-string types', () => {

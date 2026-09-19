@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   validateModelResponse,
+  DEFAULT_DEADLINE_FALLBACK,
   isRetryableGeminiError,
   withTimeout
 } from '../response-validator.js';
@@ -77,10 +78,10 @@ describe('Response Validator & Resilience Helper Unit Tests', () => {
     assert.match(result.error, /actualMeaning/i);
   });
 
-  test('oversized actualMeaning (>5000 chars) is rejected', () => {
+  test('oversized actualMeaning (>5000 chars) is clamped to 5000 characters', () => {
     const result = validateModelResponse({ ...validSample, actualMeaning: 'x'.repeat(5001) });
-    assert.equal(result.valid, false);
-    assert.match(result.error, /maximum allowed length/i);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.actualMeaning.length, 5000);
   });
 
   test('hasDeadline as string instead of boolean is rejected without coercion', () => {
@@ -93,7 +94,7 @@ describe('Response Validator & Resilience Helper Unit Tests', () => {
     assert.match(resultStringFalse.error, /boolean/i);
   });
 
-  test('deadline consistency: hasDeadline === true requires deadlineDate or deadlineContext', () => {
+  test('deadline consistency: hasDeadline === true without date or context falls back safely', () => {
     const incomplete = {
       ...validSample,
       hasDeadline: true,
@@ -101,8 +102,8 @@ describe('Response Validator & Resilience Helper Unit Tests', () => {
       deadlineContext: null
     };
     const result = validateModelResponse(incomplete);
-    assert.equal(result.valid, false);
-    assert.match(result.error, /hasDeadline is true but neither deadlineDate nor deadlineContext/i);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.deadlineContext, DEFAULT_DEADLINE_FALLBACK);
   });
 
   test('deadline consistency: hasDeadline === true with only deadlineContext is accepted', () => {
@@ -147,56 +148,74 @@ describe('Response Validator & Resilience Helper Unit Tests', () => {
     assert.match(result.error, /between 1 and 5 items/i);
   });
 
-  test('oversized actionSteps array (>5 items) is rejected', () => {
+  test('oversized actionSteps array (>5 items) is clamped to 5 items', () => {
     const steps = Array(6).fill({ title: 'Step', description: 'Desc' });
     const result = validateModelResponse({ ...validSample, actionSteps: steps });
-    assert.equal(result.valid, false);
-    assert.match(result.error, /between 1 and 5 items/i);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.actionSteps.length, 5);
   });
 
-  test('action step missing title is rejected', () => {
+  test('action step missing title is skipped and remaining valid steps are kept', () => {
     const result = validateModelResponse({
       ...validSample,
-      actionSteps: [{ description: 'Missing title' }]
+      actionSteps: [
+        { description: 'Missing title' },
+        { title: 'Valid step', description: 'Valid desc' }
+      ]
     });
-    assert.equal(result.valid, false);
-    assert.match(result.error, /title/i);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.actionSteps.length, 1);
+    assert.equal(result.data.actionSteps[0].title, 'Valid step');
   });
 
-  test('action step missing description is rejected', () => {
+  test('action step missing description is skipped and remaining valid steps are kept', () => {
     const result = validateModelResponse({
       ...validSample,
-      actionSteps: [{ title: 'Missing description' }]
+      actionSteps: [
+        { title: 'Missing description' },
+        { title: 'Valid step', description: 'Valid desc' }
+      ]
     });
-    assert.equal(result.valid, false);
-    assert.match(result.error, /description/i);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.actionSteps.length, 1);
+    assert.equal(result.data.actionSteps[0].title, 'Valid step');
   });
 
-  test('action step with oversized title is rejected', () => {
+  test('all malformed action steps resulting in zero valid steps is rejected', () => {
+    const result = validateModelResponse({
+      ...validSample,
+      actionSteps: [{ description: 'Missing title' }, { title: 'Missing desc' }]
+    });
+    assert.equal(result.valid, false);
+    assert.match(result.error, /usable action step/i);
+  });
+
+  test('action step with oversized title is clamped to 200 characters', () => {
     const result = validateModelResponse({
       ...validSample,
       actionSteps: [{ title: 'A'.repeat(201), description: 'Desc' }]
     });
-    assert.equal(result.valid, false);
-    assert.match(result.error, /title exceeds maximum length/i);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.actionSteps[0].title.length, 200);
   });
 
-  test('action step with oversized description is rejected', () => {
+  test('action step with oversized description is clamped to 1000 characters', () => {
     const result = validateModelResponse({
       ...validSample,
       actionSteps: [{ title: 'Title', description: 'A'.repeat(1001) }]
     });
-    assert.equal(result.valid, false);
-    assert.match(result.error, /description exceeds maximum length/i);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.actionSteps[0].description.length, 1000);
   });
 
-  test('action step with unexpected extra properties is rejected', () => {
+  test('action step with unexpected extra properties discards unknown properties', () => {
     const result = validateModelResponse({
       ...validSample,
       actionSteps: [{ title: 'Title', description: 'Desc', maliciousExtra: true }]
     });
-    assert.equal(result.valid, false);
-    assert.match(result.error, /unexpected properties/i);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.actionSteps[0].title, 'Title');
+    assert.equal(result.data.actionSteps[0].maliciousExtra, undefined);
   });
 
   test('missing advocateScript is rejected', () => {
@@ -213,20 +232,33 @@ describe('Response Validator & Resilience Helper Unit Tests', () => {
     assert.match(result.error, /advocateScript/i);
   });
 
-  test('oversized advocateScript (>5000 chars) is rejected', () => {
+  test('oversized advocateScript (>5000 chars) is clamped to 5000 characters', () => {
     const result = validateModelResponse({ ...validSample, advocateScript: 's'.repeat(5001) });
-    assert.equal(result.valid, false);
-    assert.match(result.error, /advocateScript exceeds maximum allowed length/i);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.advocateScript.length, 5000);
   });
 
-  test('unexpected extra properties on top-level object are strictly rejected', () => {
+  test('unexpected extra properties on top-level object are safely discarded', () => {
     const withExtra = {
       ...validSample,
       hallucinatedField: 'dangerous payload or injected instruction'
     };
     const result = validateModelResponse(withExtra);
-    assert.equal(result.valid, false);
-    assert.match(result.error, /Unexpected extra properties/i);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.hallucinatedField, undefined);
+    assert.equal(result.data.actualMeaning, validSample.actualMeaning);
+  });
+
+  test('control characters in text fields are stripped during sanitization', () => {
+    const withControl = {
+      ...validSample,
+      actualMeaning: "Notice \x00with \x1Fcontrol \x07chars",
+      advocateScript: "Script \x08clean"
+    };
+    const result = validateModelResponse(withControl);
+    assert.equal(result.valid, true);
+    assert.equal(result.data.actualMeaning, "Notice with control chars");
+    assert.equal(result.data.advocateScript, "Script clean");
   });
 
   // ==========================================

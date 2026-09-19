@@ -139,7 +139,7 @@ describe('Charitas Clew API Regression Test Suite', () => {
 
     // Verify model and prompt received by mock
     assert.ok(capturedCall);
-    assert.equal(capturedCall.model, 'gemini-flash-latest');
+    assert.equal(capturedCall.model, 'gemini-2.5-flash');
     assert.match(capturedCall.contents, /Final Notice: Electric service disconnect/);
   });
 
@@ -767,29 +767,31 @@ describe('Charitas Clew API Regression Test Suite', () => {
     assert.equal(callCount, 1);
   });
 
-  test('Gemini returning deadline consistency violation (hasDeadline: true without date/context) results in 502', async () => {
+  test('Gemini returning hasDeadline: true without date or context returns 200 with safe deadline fallback text', async () => {
     let callCount = 0;
     setGenerateContentFn(async () => {
       callCount++;
-      const invalid = {
+      const incomplete = {
         ...dummyMockSuccessResponse,
         hasDeadline: true,
         deadlineDate: null,
         deadlineContext: null
       };
-      return { text: JSON.stringify(invalid) };
+      return { text: JSON.stringify(incomplete) };
     });
 
     const res = await request(app)
       .post('/api/deconstruct')
       .send({ text: 'Valid notice text' });
 
-    assert.equal(res.status, 502);
-    assert.equal(res.body.error, "We couldn't safely interpret this notice. Please try again.");
+    assert.equal(res.status, 200);
+    assert.equal(res.body.hasDeadline, true);
+    assert.equal(res.body.deadlineDate, null);
+    assert.match(res.body.deadlineContext, /notice text/i);
     assert.equal(callCount, 1);
   });
 
-  test('Gemini returning unexpected extra properties results in 502 (rejected policy)', async () => {
+  test('Gemini returning unexpected extra properties is sanitized and returns 200', async () => {
     let callCount = 0;
     setGenerateContentFn(async () => {
       callCount++;
@@ -804,8 +806,9 @@ describe('Charitas Clew API Regression Test Suite', () => {
       .post('/api/deconstruct')
       .send({ text: 'Valid notice text' });
 
-    assert.equal(res.status, 502);
-    assert.equal(res.body.error, "We couldn't safely interpret this notice. Please try again.");
+    assert.equal(res.status, 200);
+    assert.equal(res.body.unexpectedProperty, undefined);
+    assert.equal(res.body.actualMeaning, dummyMockSuccessResponse.actualMeaning);
     assert.equal(callCount, 1);
   });
 

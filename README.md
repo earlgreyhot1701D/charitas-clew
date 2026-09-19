@@ -1,25 +1,29 @@
 # 🌊 Charitas Clew | Public Rights & Paperwork Engine
 
-> **DEV Weekend Challenge Entry (Generosity & Public Good)**  
-> **Built 100% with Google Tech Stack:** Google Gemini Flash • Google Cloud Run • Firebase Hosting  
+> **DEV Weekend Challenge Entry (Generosity & Public Good)**
+> **Built 100% with Google Tech Stack:** Google Gemini Flash • Google Cloud Run • Firebase Hosting
 > **Live App:** [https://charitas-clew.web.app](https://charitas-clew.web.app)
 
 > [!IMPORTANT]
-> **⚖️ Legal Advisement & Educational Self-Advocacy Notice:**  
+> **⚖️ Legal Advisement & Educational Self-Advocacy Notice:**
 > Charitas Clew provides automated educational information and self-advocacy guidance only. It does **not** provide formal legal advice or legal representation. Please review all generated scripts, key dates, and summaries, and verify document details with a qualified legal aid advocate, caseworker, or attorney before taking formal legal action.
 
 ---
 
-## Hackathon Submission Snapshot
+## 🏆 Hackathon Submission Snapshot & Post-Submission Log
 
-The version submitted to the DEV Weekend Challenge at the
-September 6, 2026 deadline is preserved at:
-
-`hackathon-submission-2026-09-06`
-
-Commits after that tag are post-submission security, testing,
-accessibility, reliability, and maintenance improvements and are not
-represented as work completed during the challenge period.
+> [!NOTE]
+> **Notice to Judges:**
+> The original hackathon entry submitted to the DEV Weekend Challenge at the September 6, 2026 deadline is permanently preserved in git at tag:
+> [`hackathon-submission-2026-09-06`](https://github.com/earlgreyhot1701D/charitas-clew/releases/tag/hackathon-submission-2026-09-06).
+>
+> Commits and improvements made after that tag represent post-submission production hardening, reliability, security, testing, accessibility, and resilience enhancements. They are not represented as work completed during the initial challenge window, but rather ongoing software craftsmanship to guarantee zero-downtime reliability during judging and real-world public use:
+> - **Gemini Fallback & Timeout Tuning**: Migrated primary and fallback models to `gemini-2.5-flash` and `gemini-2.5-flash-lite`. Expanded attempt timeout to 24s within a 45s provider budget (comfortably below Firebase Hosting's 60s gateway cutoff).
+> - **Permissive Runtime Response Sanitization**: Relaxed strict JSON validation to safely strip benign extra fields, discard control characters, and clamp oversized strings/arrays. If Gemini flags a deadline without a specific date or context, safe neutral context text is provided instead of returning a 502 error.
+> - **ISO Language Code Normalization**: Supported ISO codes (`en`, `es`, `vi`, `zh`, `ar`, `fr`) and uppercase variants alongside display names.
+> - **One-Tap Preset Deconstruction**: Selecting any sample notice immediately clears stale data and triggers instant deconstruction with visual loading states.
+> - **Deterministic Container Builds**: Standardized Dockerfile on `npm ci --omit=dev`.
+> - **Exhaustive Regression Suite**: Expanded unit and integration test coverage across all resilience boundaries, proxy trusts, and privacy invariants.
 
 ---
 
@@ -47,7 +51,7 @@ These documents are formatted in dense, opaque legalese. The results are devasta
 **Charitas Clew** is a zero-judgment, mobile-first paperwork engine that works with **ANY official document, legal notice, government letter, or billing statement**.
 
 > [!NOTE]
-> **📱 Mobile-First Design Intent:**  
+> **📱 Mobile-First Design Intent:**
 > Charitas Clew is purpose-built to be **mobile-first**, optimized specifically for smartphone screens in physical waiting rooms, courthouse hallways, and emergency situations. When viewed on wide desktop monitors, the interface intentionally maintains a centered, focused mobile column rather than stretching across wide viewports.
 
 Whether a user pastes text or uploads a camera photo/PDF scan of any official letter:
@@ -64,7 +68,7 @@ Whether a user pastes text or uploads a camera photo/PDF scan of any official le
 1. **Universal Multimodal Input (Text or Photo/Scan)**:
    - Accepts text pastes or direct smartphone camera uploads (JPG, PNG, WEBP, HEIC, PDF) for any official document.
 2. **Six-Language Output**:
-   - Full deconstruction, deadlines, action steps, and speaking script render in English, Spanish, Vietnamese, Chinese, Arabic, or French.
+   - Full deconstruction, deadlines, action steps, and speaking script render in English, Spanish, Vietnamese, Chinese, Arabic, or French (with ISO code normalization).
 3. **Mobile Native Share & Audio**:
    - **📲 Share / Print**: 1-tap mobile share (SMS, WhatsApp, Apple Notes, Email) via Web Share API (`navigator.share`), plus clean PDF print formatting.
    - **🔊 Speech TTS**: 1-tap audio synthesis so users can listen to their speaking script while waiting in line.
@@ -88,11 +92,11 @@ Charitas Clew was conceived, architected, built, and deployed using a 100% Googl
                                                    │
                                            [ Google Cloud Run ]
                                                    │
-                                     [ Google Gemini Flash API (`gemini-flash-latest`) ]
+                                      [ Google Gemini Flash API (`gemini-2.5-flash`) ]
 ```
 
 * **Google Gemini Chat Ideation**: Project ideation, problem formulation, persona design, legal advisement wording, and multimodal prompt engineering ([View Public Chat Session](https://gemini.google.com/app/b6b9f7e87d389357)).
-* **Google Gemini Flash (`@google/genai` SDK & `gemini-flash-latest`)**: Powers multimodal document OCR, structured JSON extraction, and plain-language translation in a calm register.
+* **Google Gemini Flash (`@google/genai` SDK & `gemini-2.5-flash`)**: Powers multimodal document OCR, structured JSON extraction, and plain-language translation in a calm register with fallback to `gemini-2.5-flash-lite`.
 * **Google Cloud Run**: Containerized Node.js Express backend (`Dockerfile`) deployed on port 8080.
 * **Google Firebase Hosting**: Ultra-fast static frontend delivery and global CDN (`charitas-clew.web.app`).
 
@@ -101,14 +105,12 @@ Charitas Clew was conceived, architected, built, and deployed using a 100% Googl
 ## 🛡️ Security & Resilience Hardening
 
 - **Untrusted Document Isolation**: Document contents are treated as untrusted data and isolated from application-controlled instructions within `<untrusted_document>` delimiters. Model output is constrained by schema and validated at runtime before display.
-- **Backend Model Failover**: Server executes up to 2 attempts per model with a fixed 1000ms delay across candidate Flash models (`gemini-flash-latest` and `gemini-3.5-flash-lite`).
-- **Payload & Rate Limiting**: Express body parser capped at 10MB. Rate
-  limiting of 15 requests per 15 minutes per IP is enforced at the Cloud Run
-  service. Behind the Firebase Hosting CDN, request counting is per-edge rather
-  than global, so the effective limit on the public domain is looser than at
-  the service itself.
+- **Backend Model Failover & Timeouts**: Server executes up to 2 attempts per model with a fixed 1000ms backoff across candidate Flash models (`gemini-2.5-flash` and `gemini-2.5-flash-lite`). Each attempt receives up to 24s within a 45s overall provider budget, safely below Firebase Hosting's 60s gateway limit.
+- **Resilient Response Validation**: Structured JSON schema output is sanitized at runtime: unknown fields are safely discarded, control characters are removed, and text fields/action steps are clamped rather than rejecting successful model inferences. If Gemini flags a deadline without a calendar date or context, safe neutral context text is provided instead of returning an unnecessary 502 error.
+- **Transient vs Permanent Failure Handling**: Transient provider issues (HTTP 429 rate limits, 503 unavailability, network timeouts) trigger automatic retries. Permanent client/auth/safety errors fail immediately without retry. The client UI distinguishes transient retryable network/server issues from the scheduled permanent calendar sunset (`2027-01-01`).
+- **Payload & Rate Limiting**: Express body parser capped at 10MB. Rate limiting of 15 requests per 15 minutes per IP is enforced at the Cloud Run service behind trusted Google proxy hops.
 - **Server-Side Credential Isolation**: The Gemini API key is stored in Google Secret Manager and injected into the Cloud Run container at runtime. No key is ever present in client-served files, and the browser never calls the Gemini API directly.
-- **Graceful EOL Sunset**: Activates 211 emergency legal aid handoff upon hardcoded sunset date (`2027-01-01`) or upon backend server connectivity failure / 5xx response.
+- **Graceful EOL Sunset**: Activates 211 emergency legal aid handoff upon hardcoded sunset date (`2027-01-01`).
 
 ---
 
@@ -138,4 +140,44 @@ echo "GEMINI_API_KEY=your_api_key_here" > .env
 # 3. Start local development engine
 npm start
 # Open http://localhost:8080 in browser
+```
+
+---
+
+## 📦 Production Deployment & Verification Runbook
+
+All production builds use immutable, Git commit-derived SHA container tags deployed to Artifact Registry and Cloud Run.
+
+```bash
+# 1. Identify current commit SHA
+COMMIT_SHA=$(git rev-parse --short HEAD)
+REGION="us-central1"
+PROJECT_ID="charitas-clew"
+IMAGE="us-central1-docker.pkg.dev/${PROJECT_ID}/charitas-clew/server:${COMMIT_SHA}"
+
+# 2. Build & push container image to Artifact Registry
+gcloud builds submit --tag "${IMAGE}" .
+
+# 3. Deploy revision to Google Cloud Run with Secret Manager injection
+gcloud run deploy charitas-clew-server \
+  --image "${IMAGE}" \
+  --region "${REGION}" \
+  --platform managed \
+  --allow-unauthenticated \
+  --set-secrets="GEMINI_API_KEY=GEMINI_API_KEY:latest" \
+  --min-instances=0 \
+  --max-instances=10 \
+  --timeout=60s
+
+# 4. Verify Cloud Run revision health & proxy trust
+SERVICE_URL=$(gcloud run services describe charitas-clew-server --region "${REGION}" --format='value(status.url)')
+curl -fsS "${SERVICE_URL}/"
+
+# 5. Deploy Firebase Hosting static assets & rewrite rules
+firebase deploy --only hosting
+
+# 6. End-to-end hosted API probe (verifying live deconstruction pipeline)
+curl -sS -X POST "https://charitas-clew.web.app/api/deconstruct" \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Final Notice: Your electric service is scheduled for disconnection on October 15, 2026 due to past due balance. Call 1-800-555-0199 immediately.","targetLanguage":"English"}'
 ```
